@@ -5,10 +5,6 @@
 #define INHC 3
 #define INLC 2
 
-#define HALL1 16
-#define HALL2 17
-#define HALL3 20
-
 #define THROTTLE 15
 
 #define DRV_EN_GATE 7
@@ -56,10 +52,6 @@ void setupPins()
   pinMode(INHC, OUTPUT);
   pinMode(INLC, OUTPUT);
   
-  pinMode(HALL1, INPUT);
-  pinMode(HALL2, INPUT);
-  pinMode(HALL3, INPUT);
-  
   pinMode(THROTTLE, INPUT);
 
   pinMode(DRV_EN_GATE, OUTPUT);
@@ -69,7 +61,6 @@ void setupPins()
   pinMode(DRV_MISO, INPUT);
   pinMode(DRV_CS, OUTPUT);
   digitalWriteFast(DRV_CS, HIGH);
-
   
   SPI.begin();
   SPI.setClockDivider(SPI_CLOCK_DIV128);
@@ -83,6 +74,10 @@ void setupPins()
   analogWriteFrequency(INHC, 8000);
   analogWriteResolution(12); // write from 0 to 2^12 = 4095
 
+  analogWrite(INHA, 0);
+  analogWrite(INHB, 0);
+  analogWrite(INHC, 0); 
+  
   Serial.begin(115200);
 
   digitalWriteFast(DRV_EN_GATE, LOW);
