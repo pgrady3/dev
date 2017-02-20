@@ -5,9 +5,6 @@
 uint8_t hallOrder[] = {255, 5, 1, 0, 3, 4, 2, 255};
 #define HALL_SHIFT 0
 
-#define ISENSE_LEN  200
-uint32_t isenseHistory[ISENSE_LEN];
-uint32_t isensePos = 0;
 uint32_t lastTime = 0;
 
 volatile uint16_t throttle = 0;
@@ -40,12 +37,6 @@ void hallISR()
 }
 
 void loop(){
-  uint32_t maxIsense = 0;
-  for(uint32_t i = 0; i < ISENSE_LEN; i++)
-  {
-    if(isenseHistory[i] > maxIsense)
-      maxIsense = isenseHistory[i];
-  }
   
   uint32_t curTime = millis();
   if(curTime - lastTime > 50)
@@ -60,26 +51,6 @@ void loop(){
 
     lastTime = curTime;
   }
-  
-  isenseHistory[isensePos++] = analogRead(ISENSE1);
-  isensePos %= ISENSE_LEN;
-
-  
-  /*if(digitalRead(FAULT) == LOW)
-  {
-    throttle = 0;
-    SPIwrite(0x02, 0x04);//reset all
-    delay(1);
-    digitalWriteFast(DRV_EN_GATE, LOW);
-    delay(1);
-    digitalWriteFast(DRV_EN_GATE, HIGH);
-    delay(5);
-    Serial.println("Reset gate");
-  }
-
-  Serial.println(SPIread(0x00), HEX);
-  Serial.println(SPIread(0x01), HEX);
-  Serial.println();*/
 
   delay(1);
 }
