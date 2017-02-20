@@ -63,7 +63,7 @@ void setupPins()
   digitalWriteFast(DRV_CS, HIGH);
   
   SPI.begin();
-  SPI.setClockDivider(SPI_CLOCK_DIV128);
+  SPI.setClockDivider(SPI_CLOCK_DIV16);
   SPI.setDataMode(SPI_MODE1);
   
   pinMode(ISENSE1, INPUT);
