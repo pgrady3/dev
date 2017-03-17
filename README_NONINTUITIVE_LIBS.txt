@@ -1,0 +1,1 @@
+all libs are stored in the lib folder. because arduino is dumb, when the batch file is run, it will copy the files into each project
