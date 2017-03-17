@@ -1,7 +1,7 @@
 #include "TimerOne.h"
 #include "SPI.h"
 #include "config.h"
-#include "hall.h"
+#include "enc.h"
 
 uint8_t useHalls = 0;
 
@@ -14,20 +14,7 @@ const uint8_t B = 22;
 
 void setup(){
   setupPins();
-  pinMode(CSnPin,OUTPUT);
-  pinMode(A, INPUT);
-  pinMode(B, INPUT);
-
-
-  digitalWrite(CSnPin, HIGH);
-  digitalWrite(CSnPin, LOW);
-  digitalWrite(CSnPin, HIGH);
-  delay(100);
-  
-  if(useHalls)
-    hallInit();
-
-  hallSetThrottle(0.1);
+  setupEnc();
 
   uint8_t curState = 0;
   while(1)

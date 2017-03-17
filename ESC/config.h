@@ -1,9 +1,9 @@
-#define INHA 6
-#define INLA 5
-#define INHB 4 
-#define INLB 0
-#define INHC 3
-#define INLC 2
+#define INHA 23
+#define INLA 4
+#define INHB 22 
+#define INLB 5
+#define INHC 21
+#define INLC 6
 
 #define THROTTLE 15
 
@@ -13,11 +13,12 @@
 #define DRV_MISO 12
 #define DRV_CLK 13
 
-#define FAULT 9
-#define ISENSE1 23
+#define ISENSE1 17
+#define ISENSE2 16
+#define VSENSE 14
 
-#define LED 13
-
+#define LED 9
+#define LED2 8
 
 #define MAX_THROTTLE  1000
 #define MIN_THROTTLE  300
@@ -42,8 +43,8 @@ float getThrottle()
 
 void setupPins()
 {
-  //pinMode(LED, OUTPUT);
-  pinMode(FAULT, INPUT);
+  pinMode(LED, OUTPUT);
+  pinMode(LED2, OUTPUT);
   
   pinMode(INHA, OUTPUT);
   pinMode(INLA, OUTPUT);
@@ -67,6 +68,7 @@ void setupPins()
   SPI.setDataMode(SPI_MODE1);
   
   pinMode(ISENSE1, INPUT);
+  pinMode(ISENSE2, INPUT);
 
   // change the analog write frequency to 8 kHz
   analogWriteFrequency(INHA, 8000);
@@ -94,9 +96,9 @@ void setupPins()
   //SPI.end();
 }
 
-uint16_t SPIread(uint8_t addr)
+uint16_t SPIread(uint8_t addr, uint8_t CS)
 {
-  digitalWrite(DRV_CS, LOW);
+  digitalWrite(CS, LOW);
 
   delayMicroseconds(50);
   uint8_t d = 1 << 7;
@@ -104,15 +106,15 @@ uint16_t SPIread(uint8_t addr)
   SPI.transfer(d);
   SPI.transfer(0);
 
-  digitalWrite(DRV_CS, HIGH);
+  digitalWrite(CS, HIGH);
   delayMicroseconds(30);
-  digitalWrite(DRV_CS, LOW);
+  digitalWrite(CS, LOW);
   
   d = SPI.transfer(1<<7);
   uint16_t resp = d << 8;
   resp |= SPI.transfer(0);
 
-  digitalWrite(DRV_CS, HIGH);
+  digitalWrite(CS, HIGH);
 
   return resp & 0x7FF;
 }
