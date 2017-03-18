@@ -23,8 +23,8 @@
 #define MAX_THROTTLE  1000
 #define MIN_THROTTLE  300
 
-uint16_t SPIread(uint8_t addr);
-void SPIwrite(uint8_t addr, uint16_t data);
+uint16_t DRVread(uint8_t addr);
+void DRVwrite(uint8_t addr, uint16_t data);
 void setupPins();
 float getThrottle();
 
@@ -41,7 +41,7 @@ float getThrottle()
   return throttle;
 }
 
-void setupPins()
+void init()
 {
   pinMode(LED, OUTPUT);
   pinMode(LED2, OUTPUT);
@@ -87,18 +87,28 @@ void setupPins()
   digitalWriteFast(DRV_EN_GATE, HIGH);
   delay(10);
 
-  while(SPIread(0x01) != 0x01)
+  while(DRVread(0x01) != 0x01)
   {
-    Serial.println("DRV init fail");
-    delay(500);
+    Serial.print("DRV init fail. 0x00=");
+    Serial.print(DRVread(0x00));
+    Serial.print(" 0x01=");
+    Serial.println(DRVread(0x01));
+    
+    digitalWrite(LED, !digitalRead(LED));
+    digitalWrite(LED2, !digitalRead(LED2));
+
+    digitalWrite(DRV_EN_GATE, LOW);
+    delay(10);
+    digitalWrite(DRV_EN_GATE, HIGH);
+    delay(10);
   }
 
   //SPI.end();
 }
 
-uint16_t SPIread(uint8_t addr, uint8_t CS)
+uint16_t DRVread(uint8_t addr)
 {
-  digitalWrite(CS, LOW);
+  digitalWrite(DRV_CS, LOW);
 
   delayMicroseconds(50);
   uint8_t d = 1 << 7;
@@ -106,20 +116,20 @@ uint16_t SPIread(uint8_t addr, uint8_t CS)
   SPI.transfer(d);
   SPI.transfer(0);
 
-  digitalWrite(CS, HIGH);
+  digitalWrite(DRV_CS, HIGH);
   delayMicroseconds(30);
-  digitalWrite(CS, LOW);
+  digitalWrite(DRV_CS, LOW);
   
   d = SPI.transfer(1<<7);
   uint16_t resp = d << 8;
   resp |= SPI.transfer(0);
 
-  digitalWrite(CS, HIGH);
+  digitalWrite(DRV_CS, HIGH);
 
   return resp & 0x7FF;
 }
 
-void SPIwrite(uint8_t addr, uint16_t data)
+void DRVwrite(uint8_t addr, uint16_t data)
 {
   digitalWriteFast(DRV_CS, LOW);
 

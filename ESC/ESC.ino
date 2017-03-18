@@ -1,53 +1,31 @@
 #include "TimerOne.h"
 #include "SPI.h"
 #include "config.h"
+#include "hall.h"
 #include "enc.h"
 
-uint8_t useHalls = 0;
-
-const uint8_t DO = 12;
-const uint8_t CLK = 13;
-const uint8_t CSnPin = 17;
-const uint8_t A = 21;
-const uint8_t B = 22;
-
-
 void setup(){
-  setupPins();
-  setupEnc();
+  init();
+  ENCinit();
 
-  uint8_t curState = 0;
-  while(1)
-  {
-    writeState(curState++);
-    curState = curState % 6;
-    
+  if(0)//MAGNETIC VARIATION TEST
+    ENCvarTest();
 
-    for(uint16_t i = 0; i < 25; i++)
-    {
-      Serial.print(curState);
-      Serial.print("\t");
-      Serial.println(SPIread());
-      delay(10);
-    }
-  }
+  if(1)
+    ENClinTest();
 }
 
 void loop(){
-  if(useHalls)
-    hallPoll();
-}
-
-uint16_t SPIread()
-{
-  digitalWrite(CSnPin, LOW);
-  delayMicroseconds(1);
   
-  uint8_t d = SPI.transfer(0);
-  uint16_t resp = d << 8;
-  resp |= SPI.transfer(0);
-
-  digitalWrite(CSnPin, HIGH);
-
-  return resp >> 6;
+  uint16_t data = ENCread();
+  uint16_t pos = data >> 6;
+  uint8_t flags = data & 0x3F;
+  Serial.println(pos);
+  Serial.println(flags>>1, BIN);
+  
+  digitalWrite(LED2, !digitalRead(LED2));
+  delay(100);
 }
+
+
+
