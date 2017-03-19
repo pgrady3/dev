@@ -30,6 +30,16 @@ void hallInit()
   attachInterrupt(HALL1, hallISR, CHANGE);
   attachInterrupt(HALL2, hallISR, CHANGE);
   attachInterrupt(HALL3, hallISR, CHANGE);
+
+   // change the analog write frequency to 8 kHz
+  analogWriteFrequency(INHA, 8000);
+  analogWriteFrequency(INHB, 8000);
+  analogWriteFrequency(INHC, 8000);
+  analogWriteResolution(12); // write from 0 to 2^12 = 4095
+
+  analogWrite(INHA, 0);
+  analogWrite(INHB, 0);
+  analogWrite(INHC, 0); 
 }
 
 void hallPoll()
