@@ -46,7 +46,7 @@ uint16_t ENCreadAngle()
 float ENCreadEAngle()
 {
   float rot = ENCreadAngle() / 1024.0;
-  return fmod(rot * 42.0, 6) + ENC_OFFSET;
+  return fmod(rot * 42.0 +  + ENC_OFFSET, 6);
 }
 
 void ENClinTest()
@@ -66,7 +66,9 @@ void ENClinTest()
       {
         Serial.print(pos);
         Serial.print(" ");
-        Serial.println(ENCreadAngle());
+        Serial.print(pos % 6);
+        Serial.print(" ");
+        Serial.println(ENCreadEAngle());
         delay(10);
       }
     }

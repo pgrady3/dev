@@ -8,11 +8,8 @@ void setup(){
   init();
   ENCinit();
 
-  if(0)//MAGNETIC VARIATION TEST
-    ENCvarTest();
-
-  if(1)
-    ENClinTest();
+  //ENCvarTest();
+  //ENClinTest();
 }
 
 void loop(){
@@ -26,6 +23,4 @@ void loop(){
   digitalWrite(LED2, !digitalRead(LED2));
   delay(100);
 }
-
-
 
