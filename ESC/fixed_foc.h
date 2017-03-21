@@ -10,6 +10,9 @@
  
 #include "sin_table.h"
 
+int32_t foc_sin(uint16_t angle);
+int32_t foc_cos(uint16_t angle);
+
 // Number of "decimal" places. Fixed point math will consider a value
 // of 2^Q equal to 1.0
 #define FIXED_Q		16	// 65536 = 1.0, smallest number = 0.00001526
@@ -56,7 +59,6 @@ void clarke_transform(Clarke_Type* cs)
 	// Beta = (2*B + A) / sqrt(3)
 
 	cs->Alpha = cs->As;
-	temp = 2*(cs->Bs);
 	cs->Beta = MUL_LONG(cs->As + MUL_LONG(cs->Bs,TWO), INV_SQRT_3); 
 }
 
@@ -78,8 +80,8 @@ void inv_park_transform(Park_Type* ps)
 	// Beta = Q*cos(theta) + D*sin(theta)
 	int32_t Sin, Cos;
 	
-	Sin = foc_sin(ps->theta);
-	Cos = foc_cos(ps->theta);
+	Sin = foc_sin(ps->Theta);
+	Cos = foc_cos(ps->Theta);
 	ps->Alpha = MUL_LONG(ps->Ds, Cos) - MUL_LONG(ps->Qs, Sin);
 	ps->Beta = MUL_LONG(ps->Qs, Cos) + MUL_LONG(ps->Ds, Sin);
 }
@@ -164,7 +166,7 @@ void svm_calc(SVM_Type* svm)
 		T2 = Y;
 		svm->tA = 0;
 		svm->tC = T2;
-		svm->tB = svm->C + T1;
+		svm->tB = svm->tC + T1;
 		break;
 	case 2:
 		T1 = -Z;
@@ -195,9 +197,9 @@ void svm_calc(SVM_Type* svm)
 	}
 }
 
-// Input value is in the range (0 to 65535), equivalent to (-1 to 0.9999...),
+// Input value is in the range (0 to 65535), equivalent to (0 to 0.9999...),
 // and is mapped to (0 to 359.999...) degrees.
-// Output is the limits of a 16-bit int (-32768 to 32767) representing (-1 to 0.999...)
+// Output is in Q16 format (-65536 to 65535) representing (-1 to 0.999...)
 int32_t foc_sin(uint16_t angle)
 {
 	int32_t sinVal;
@@ -210,12 +212,12 @@ int32_t foc_sin(uint16_t angle)
 	// Calculate fractional value
 	fract = (angle - (index << Q16_SINCOS_SHIFT)) << 8;
 	// Find nearest two values
-	a = sinTable[index];
-	b = sinTable[index+1];
+	a = sinTable_q15[index];
+	b = sinTable_q15[index+1];
 	// Linear interpolation
 	sinVal = ((int32_t)(32768-fract)) * ((int32_t)a);
 	sinVal += ((int32_t)fract) * ((int32_t)b);
-	sinVal >>=15;
+	sinVal >>=14;
 	return sinVal;
 }
 
