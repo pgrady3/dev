@@ -7,6 +7,8 @@
  * unit. All calculations are performed using
  * fixed-point math with integers.
  */
+ 
+#include "sin_table.h"
 
 // Number of "decimal" places. Fixed point math will consider a value
 // of 2^Q equal to 1.0
@@ -17,7 +19,10 @@
 #define SQRT_3_OVER_2	((int32_t)( 56756U))
 #define INV_SQRT_3		((int32_t)( 37837U))
 #define MUL_LONG(a,b)	(int32_t)(((int64_t(a))*(int64_t(b))) >> FIXED_Q)
-#define MUL_INT(a,b,)	(int32_t)(((int32_t(a))*(int32_t(b))) >> FIXED_Q)
+#define MUL_INT(a,b)	(int32_t)(((int32_t(a))*(int32_t(b))) >> FIXED_Q)
+
+#define Q16_SINCOS_SHIFT  (7)
+#define SINCOS_TABLE_SIZE	512
 
 typedef struct _clarkestruct
 {
@@ -31,9 +36,9 @@ typedef struct _parkstruct
 {
 	int32_t Alpha;
 	int32_t Beta;
-	int32_t Theta;
 	int32_t Ds;
 	int32_t Qs;
+	uint16_t Theta;
 } Park_Type;
 
 typedef struct _svmstruct
@@ -61,7 +66,6 @@ void park_transform(Park_Type* ps)
 	// Q = Beta*cos(theta) - Alpha*sin(theta)
 	int32_t Sin, Cos;
 	
-	// TODO: Write sin, cos functions. Probably LUT based.
 	Sin = foc_sin(ps->Theta);
 	Cos = foc_cos(ps->Theta);
 	ps->Ds = MUL_LONG(ps->Alpha, Cos) + MUL_LONG(ps->Beta, Sin);
@@ -74,7 +78,6 @@ void inv_park_transform(Park_Type* ps)
 	// Beta = Q*cos(theta) + D*sin(theta)
 	int32_t Sin, Cos;
 	
-	// TODO: Still need sin and cos functions
 	Sin = foc_sin(ps->theta);
 	Cos = foc_cos(ps->theta);
 	ps->Alpha = MUL_LONG(ps->Ds, Cos) - MUL_LONG(ps->Qs, Sin);
@@ -190,4 +193,34 @@ void svm_calc(SVM_Type* svm)
 		svm->tC = 0;
 		break;
 	}
+}
+
+// Input value is in the range (0 to 65535), equivalent to (-1 to 0.9999...),
+// and is mapped to (0 to 359.999...) degrees.
+// Output is the limits of a 16-bit int (-32768 to 32767) representing (-1 to 0.999...)
+int32_t foc_sin(uint16_t angle)
+{
+	int32_t sinVal;
+	int32_t index;
+	int16_t a, b;
+	int16_t fract; 
+
+	// Calculate nearest index
+	index = (int32_t)angle >> Q16_SINCOS_SHIFT;
+	// Calculate fractional value
+	fract = (angle - (index << Q16_SINCOS_SHIFT)) << 8;
+	// Find nearest two values
+	a = sinTable[index];
+	b = sinTable[index+1];
+	// Linear interpolation
+	sinVal = ((int32_t)(32768-fract)) * ((int32_t)a);
+	sinVal += ((int32_t)fract) * ((int32_t)b);
+	sinVal >>=15;
+	return sinVal;
+}
+
+int32_t foc_cos(uint16_t angle)
+{
+	// Simply return sin for angle + pi/2
+	return foc_sin(angle + 0x4000);
 }
