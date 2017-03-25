@@ -4,6 +4,7 @@
 #include "config.h"
 #include "hall.h"
 #include "enc.h"
+#include "fixed_foc.h"
 
 #define pin_pwm_pha INHA
 #define pin_pwm_phb INHB
@@ -14,6 +15,9 @@ int FTM_Mod_Val;
 float command_D = 0.07f;
 float command_Q = 0.0f;
 
+uint32_t ticks = 0;
+uint16_t angle = 0;
+
 void setup(){
   init();
   ENCinit();
@@ -21,8 +25,8 @@ void setup(){
   //ENCvarTest();
   //ENClinTest();
 
-  DRVwrite(0x02, (1<<3));//Set 3PWM inputs, many other settings
-
+  DRVwrite(0x02, (1<<3) | (7<<6));//Set 3PWM inputs, medium current limit
+  
   // FTM0 settings
   // f_pwm = 20kHz
   // up-down counting mode
@@ -35,7 +39,34 @@ void setup(){
   FTM0_C2V = FTM_Mod_Val; // Channel 2 will fire at the top of the PWM up-down count,
                           // when PWM waveform is at its low level
 
+  // ADC settings
+  analogReadRes(12); // Set 12-bit ADC resolution (default is 10)
+  ADC0_SC2 = ADC_SC2_ADTRG; // Hardware triggered (comes from PDB)
+  ADC0_SC3 = 0; // Not continuous, no averaging
+  ADC0_SC1A = 8; // Channel A set to measure A-phase current, channel 8, ARM pin 35, teensy pin 16
+  ADC0_SC1B = 9 | ADC_SC1_AIEN; // Interrupt enabled for channel B, 
+                                       // and it measures B-phase current, ARM pin 36, teensy pin 17
+ 
+  // Programmable Delay Block settings
+  // Clock it first! If the PDB clock isn't turned on, the processor crashes when
+  // accessing PDB registers.
+  SIM_SCGC6 |= SIM_SCGC6_PDB; // Enable PDB in System Integration Module
+  
+  PDB0_SC = PDB_SC_TRGSEL(8); // FTM0 trigger input selected (which was set to FTM0_CH2)
+  PDB0_CH0DLY0 = 1; // Almost immediately trigger the first ADC conversion
+  PDB0_CH0C1 = (2 << 16) | (1 << 8) | (3); // Back-to-back turned on for channel 2,
+      // channel 1 set by its counter, and both channel 1 and 2 outputs turned on
+      // Back-to-back mode means that channel 2 (ADC0 'B' conversion) will start
+      // as soon as the channel 1 ('A' conversion) is completed.
+  PDB0_MOD = FTM0_MOD; // Same maximum count as FTM
+  PDB0_SC |= PDB_SC_LDOK | PDB_SC_PDBEN; // Turn on the PDB
+  
+  attachInterruptVector(IRQ_ADC0, adc0_irq); // When IRQ_ADC0 fires, code execution will
+                                             // jump to "adc0_irq()" function.
+  NVIC_ENABLE_IRQ(IRQ_ADC0); // ADC complete interrupt
+  NVIC_SET_PRIORITY(IRQ_ADC0, 0); // Zero = highest priority
 
+  
   analogWrite(pin_pwm_pha, 1);
   analogWrite(pin_pwm_phb, 1);
   analogWrite(pin_pwm_phc, 1);
@@ -45,34 +76,50 @@ void setup(){
   FTM0_C6V = 0;
 }
 
-void loop(){
-  static float angle = 0.0f;
+/* adc0_irq
+ *  Interrupt vector for the ADC0 complete interrupt. In this program's setup, the
+ *  ADC0 interrupt will only fire when the second conversion ('B' conversion) is 
+ *  complete. The act of reading the result registers (ADC0_Rn) clears the conversion
+ *  complete flag.
+ */
+void adc0_irq()
+{
+  // Clear the ADC interrupt flags by reading results  
+  uint16_t phA_current = ADC0_RA;
+  uint16_t phB_current = ADC0_RB;
+  // FOC code can go here:
 
+  ticks++;
+  if(ticks & 1)//The loop is called at 20kHz, so reduce calling rate to 10kHz
+    return;
+  
   digitalWrite(LED2, HIGH);
-
-  angle += 21.6f;
-  if(angle >= 360.0f)
-  {
-    angle = 0.0f;
-  }
   
-  float sin_theta = sin(angle*3.14159f/180.0f);
-  float cos_theta = cos(angle*3.14159f/180.0f);
-  float alpha = command_D*cos_theta - command_Q*sin_theta;
-  float beta = command_Q*cos_theta + command_D*sin_theta;
-
-  float phA = alpha;
-  float phB = -0.5f*alpha + beta*0.866f; // 0.866 is about sqrt(3)/2
-  float phC = -0.5f*alpha - beta*0.866f;
-
-  float tA = (phA + 0.5/* - minP*/)*0.577f; // 0.577 is 1/sqrt(3)
-  float tB = (phB + 0.5/* - minP*/)*0.577f;
-  float tC = (phC + 0.5/* - minP*/)*0.577f;
-
-  Set_PWM_Duty_Scaled((long)(tA*65536.0f), (long)(tB*65536.0f), (long)(tC*65536.0f));  
+  Park_Type pp;
+  SVM_Type ss;
   
+  pp.Ds = 0;
+  pp.Qs = 10000;
+  pp.Theta = angle;
+  inv_park_transform(&pp);
+  ss.Alpha = pp.Alpha;
+  ss.Beta = pp.Beta;
+  svm_calc(&ss);
+
+  Set_PWM_Duty_Scaled(ss.tA, ss.tB, ss.tC);
+
   digitalWrite(LED2, LOW);
-  delay(10);
+}
+
+void loop(){
+  static uint8_t i = 0;
+  i++;
+
+  if(i % 30 == 0)
+    Serial.println(angle);
+  
+  angle = ENCreadEAngle();
+  delay(1);
 }
 
 /* Set_PWM_Duty

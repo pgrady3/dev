@@ -5,7 +5,7 @@
 #define ENC_CS 0
 #define ENC_PROG 3
 
-#define ENC_OFFSET 2.965
+#define ENC_OFFSET 15206
 
 void ENCinit()
 {
@@ -40,13 +40,13 @@ uint16_t ENCread()
 
 uint16_t ENCreadAngle()
 {
-  return ENCread() >> 6;
+  return ENCread() >> 6;//returns 10 bit value
 }
 
-float ENCreadEAngle()
+uint16_t ENCreadEAngle()
 {
-  float rot = ENCreadAngle() / 1024.0;
-  return fmod(rot * 42.0 +  + ENC_OFFSET, 6);
+  uint32_t rot = ENCreadAngle() * 64 * 7 - ENC_OFFSET;//scale so one e-rev is 65536
+  return rot;//effective modulo in the cast down to 16 bit
 }
 
 void ENClinTest()
