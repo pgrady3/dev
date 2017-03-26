@@ -5,7 +5,7 @@
 #define ENC_CS 0
 #define ENC_PROG 3
 
-#define ENC_OFFSET 15206
+#define ENC_OFFSET 0
 
 void ENCinit()
 {

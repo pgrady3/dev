@@ -99,7 +99,7 @@ void adc0_irq()
   SVM_Type ss;
   
   pp.Ds = 0;
-  pp.Qs = 10000;
+  pp.Qs = 3000;
   pp.Theta = angle;
   inv_park_transform(&pp);
   ss.Alpha = pp.Alpha;
@@ -112,14 +112,24 @@ void adc0_irq()
 }
 
 void loop(){
-  static uint8_t i = 0;
-  i++;
-
-  if(i % 30 == 0)
-    Serial.println(angle);
+  /*
+  angle += 10000;
+  delay(500);
   
-  angle = ENCreadEAngle();
-  delay(1);
+  for(uint32_t i = 0; i < 30; i++)
+  {
+    Serial.print(angle);
+    Serial.print(" ");
+    Serial.println(ENCreadEAngle());
+    delay(10);
+  }
+  */
+
+  angle += 500;
+  Serial.print(angle);
+  Serial.print(" ");
+  Serial.println(ENCreadEAngle());
+  delay(25);
 }
 
 /* Set_PWM_Duty
