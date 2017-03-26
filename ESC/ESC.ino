@@ -25,7 +25,7 @@ void setup(){
   //ENCvarTest();
   //ENClinTest();
 
-  DRVwrite(0x02, (1<<3) | (7<<6));//Set 3PWM inputs, medium current limit
+  DRVwrite(0x02,  (1<<3) | (10<<6));//Set 3PWM inputs, medium current limit
   
   // FTM0 settings
   // f_pwm = 20kHz
@@ -99,7 +99,7 @@ void adc0_irq()
   SVM_Type ss;
   
   pp.Ds = 0;
-  pp.Qs = 3000;
+  pp.Qs = 2000;
   pp.Theta = angle;
   inv_park_transform(&pp);
   ss.Alpha = pp.Alpha;
@@ -112,7 +112,7 @@ void adc0_irq()
 }
 
 void loop(){
-  /*
+  
   angle += 10000;
   delay(500);
   
@@ -123,13 +123,14 @@ void loop(){
     Serial.println(ENCreadEAngle());
     delay(10);
   }
-  */
-
+  
+/*
   angle += 500;
   Serial.print(angle);
   Serial.print(" ");
   Serial.println(ENCreadEAngle());
-  delay(25);
+  delay(10);
+  */
 }
 
 /* Set_PWM_Duty
