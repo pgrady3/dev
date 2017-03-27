@@ -5,8 +5,8 @@ void setup() {
   Serial.begin(9600);
   for (uint8_t i = 0; i < 4; i++) {
     pinMode(outputPins[i], OUTPUT);
-    pinMode(inputPin, INPUT);
   }
+  pinMode(inputPin, INPUT);
 }
 
 void loop() {
