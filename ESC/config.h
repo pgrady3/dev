@@ -17,7 +17,7 @@
 #define ISENSE2 16
 #define VSENSE 14
 
-#define LED 9
+#define LED1 9
 #define LED2 8
 
 #define MAX_THROTTLE  1000
@@ -43,7 +43,7 @@ float getThrottle()
 
 void init()
 {
-  pinMode(LED, OUTPUT);
+  pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
   
   pinMode(INHA, OUTPUT);
@@ -84,7 +84,7 @@ void init()
     Serial.print(" 0x01=");
     Serial.println(DRVread(0x01));
     
-    digitalWrite(LED, !digitalRead(LED));
+    digitalWrite(LED1, !digitalRead(LED1));
     digitalWrite(LED2, !digitalRead(LED2));
 
     digitalWrite(DRV_EN_GATE, LOW);

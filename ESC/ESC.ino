@@ -18,6 +18,15 @@ float command_Q = 0.0f;
 uint32_t ticks = 0;
 uint16_t angle = 0;
 
+uint16_t throttle = 10000;
+
+#define MEM_SIZE 12000
+#define START 100000
+
+volatile int16_t phAmem[MEM_SIZE];
+volatile int16_t phBmem[MEM_SIZE];
+uint32_t memPos = 0;
+
 void setup(){
   init();
   ENCinit();
@@ -64,7 +73,7 @@ void setup(){
   attachInterruptVector(IRQ_ADC0, adc0_irq); // When IRQ_ADC0 fires, code execution will
                                              // jump to "adc0_irq()" function.
   NVIC_ENABLE_IRQ(IRQ_ADC0); // ADC complete interrupt
-  NVIC_SET_PRIORITY(IRQ_ADC0, 0); // Zero = highest priority
+  NVIC_SET_PRIORITY(IRQ_ADC0, 10); // Zero = highest priority
 
   
   analogWrite(pin_pwm_pha, 1);
@@ -85,9 +94,15 @@ void setup(){
 void adc0_irq()
 {
   // Clear the ADC interrupt flags by reading results  
-  uint16_t phA_current = ADC0_RA;
-  uint16_t phB_current = ADC0_RB;
+  int16_t phA_current = ADC0_RA - 2054;
+  int16_t phB_current = ADC0_RB - 2050;
   // FOC code can go here:
+
+  if(memPos < MEM_SIZE)
+  {
+    phAmem[memPos] = phA_current;
+    phBmem[memPos++] = phB_current;
+  }
 
   ticks++;
   if(ticks & 1)//The loop is called at 20kHz, so reduce calling rate to 10kHz
@@ -98,9 +113,9 @@ void adc0_irq()
   Park_Type pp;
   SVM_Type ss;
   
-  pp.Ds = 0;
-  pp.Qs = 2000;
-  pp.Theta = angle;
+  pp.Ds = 000;
+  pp.Qs = throttle;
+  pp.Theta = ENCreadEAngle();
   inv_park_transform(&pp);
   ss.Alpha = pp.Alpha;
   ss.Beta = pp.Beta;
@@ -112,25 +127,24 @@ void adc0_irq()
 }
 
 void loop(){
-  
-  angle += 10000;
-  delay(500);
-  
-  for(uint32_t i = 0; i < 30; i++)
+  throttle = 0;
+  ENCgetAbsAngle();
+  delayMicroseconds(200);
+
+  if(memPos == MEM_SIZE)
   {
-    Serial.print(angle);
-    Serial.print(" ");
-    Serial.println(ENCreadEAngle());
-    delay(10);
+    throttle = 0;
+    delay(5000);
+    for(uint32_t i = 0; i < MEM_SIZE; i++)
+    {
+      Serial.print(phAmem[i]);
+      Serial.print(" ");
+      Serial.println(phBmem[i]);
+      delay(1);
+    }
+
+    memPos = MEM_SIZE + 1;
   }
-  
-/*
-  angle += 500;
-  Serial.print(angle);
-  Serial.print(" ");
-  Serial.println(ENCreadEAngle());
-  delay(10);
-  */
 }
 
 /* Set_PWM_Duty
