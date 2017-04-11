@@ -1,6 +1,6 @@
 #include <i2c_t3.h>
 
-#define LED1 22
+#define LED1 3
 #define LED2 21
 
 #define S0 15
