@@ -13,6 +13,7 @@ void setup() {
     INAinit();
     
     Serial.begin(115200);
+    Serial2.begin(9600);
 
     pinMode(LED1, OUTPUT);
     pinMode(LED2, OUTPUT);
@@ -46,6 +47,10 @@ void loop() {
   Serial.print(INAvoltage());
   Serial.print(" ");
   Serial.println(INAcurrent() * 1000);
+
+  Serial2.print(INAvoltage());
+  Serial2.print(" ");
+  Serial2.println(INAcurrent() * 1000);
 
   for(uint8_t i = 0; i < 16; i++)
   {
