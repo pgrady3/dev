@@ -1,4 +1,5 @@
 #include <i2c_t3.h>
+#include <SD.h>
 
 #define LED1 3
 #define LED2 21
@@ -10,15 +11,26 @@
 
 #define RELAY 2
 #define HALL 23
+#define SD_CS 8
 
 #define NUMBER_OF_CELLS 16
 #define CELL_MIN 2.7
 #define CELL_MAX 4.2
+#define MAX_TEMPERATURE 50.0
 
 uint32_t lastHallPulse = 0;
 uint32_t lastInaMeasurement = 0;
 uint32_t countIntervals = 0;
 float energyUsed = 0.0;
+float distance = 0.0;
+float currentSpeed = 0.0;
+float temperature = 0.0;
+float InaVoltage = 0.0;
+float InaCurrent = 0.0;
+float batteryVoltage = 0.0;
+bool batteryOK = true;
+
+File myFile;
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -26,6 +38,7 @@ void setup() {
 
   Serial.begin(115200);
   Serial2.begin(9600);
+  SD.begin(SD_CS);
 
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
@@ -41,6 +54,8 @@ void setup() {
   digitalWrite(LED2, HIGH);
 
   digitalWrite(RELAY, HIGH);
+
+  attachInterrupt(digitalPinToInterrupt(HALL), countHallPulse, FALLING);
 }
 
 float readCell(uint8_t cell)
@@ -59,37 +74,36 @@ float readCell(uint8_t cell)
 
 void loop() {
   float cellVolts[NUMBER_OF_CELLS];
-  bool cellVoltException = false;
 
   float InaVoltage = INAvoltage();
   float InaCurrent = INAcurrent();
-
-  
-  
-
+  float currentInaTime = millis();
+  energyUsed += (InaVoltage * InaCurrent) * ((float)(currentInaTime - lastInaMeasurement));
+  lastInaMeasurement = currentInaTime;
   float average = 0.0;
   for (uint8_t i = 0; i < NUMBER_OF_CELLS; i++)
   {
     float result = readCell(i);
     average += result;
-    if ((result < CELL_MIN) || (result > CELL_MAX)) {
-      cellVoltException = true;
-    }
     cellVolts[i] = result;
+    if ((result < CELL_MIN) || (result > CELL_MAX)) {
+      batteryOK = false;
+    }
   }
-  average = average / (float)NUMBER_OF_CELLS;
-  bool hallRising = false;
-  while (true) {
-    if (digitalRead(HALL) == HIGH || !hallRising) {
-      hallRising = true;
-    }
-    if ((hallRising == true) && (digitalRead(HALL) == LOW)) {
-      countIntervals++;
-      uint32_t currentTime = millis();
-      uint32_t interval = currentTime - lastHallPulse;
-    }
+  batteryVoltage = average / NUMBER_OF_CELLS;
 
+  //TODO: measure temperature here.
+  if (temperature > MAX_TEMPERATURE) {
+    batteryOK = false;
   }
+
+  // 2.74889357 is the circumfence of the wheels.
+  distance = ((float)countIntervals) / 8.0 * 2.74889357;
+
+  //TODO: calculate speed here.
+
+  // Not sure where to put the write function.
+  writeToBtSd();
 }
 
 float INAcurrent()
@@ -131,7 +145,23 @@ uint16_t INAreadReg(uint8_t reg)
   return resp;
 }
 
-void writeToBt() {
-  
+void countHallPulse() {
+  uint32_t current = millis();
+  uint32_t thisInterval = current - lastHallPulse;
+  if (thisInterval < 1000) {
+    countIntervals++;
+  }
+  lastHallPulse = current;
+}
+
+void writeToBtSd() {
+  String outputStr = String(InaVoltage) + " " + String(InaCurrent) + " " + String(currentSpeed) + " " +
+                     String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
+                     String(batteryOK) + " "+ String(batteryVoltage) + String(millis()) + " ";
+  Serial.println(outputStr);
+  Serial2.println(outputStr);
+  myFile = SD.open("data.txt", FILE_WRITE);
+  myFile.println(outputStr);
+  myFile.close();
 }
 
