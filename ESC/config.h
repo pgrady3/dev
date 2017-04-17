@@ -93,6 +93,8 @@ void init()
     delay(10);
   }
 
+  DRVwrite(0x02,  (1<<3) | (10<<6));//Set 3PWM inputs, medium current limit
+  
   //SPI.end();
 }
 

@@ -5,7 +5,7 @@
 #define ENC_CS 0
 #define ENC_PROG 3
 
-#define ENC_OFFSET 24836
+#define ENC_OFFSET 25806
 
 uint16_t curAngle = 0;
 uint32_t encTicks = 0;
@@ -93,34 +93,10 @@ uint16_t ENCreadAngle()
 
 uint16_t ENCreadEAngle()
 {
-  uint32_t rot = ENCreadAngle() * 64 * 7 - ENC_OFFSET;//scale so one e-rev is 65536
+  uint32_t rot = (uint32_t)(ENCreadAngle() * 64 * 7) - ENC_OFFSET;//scale so one e-rev is 65536
   return rot;//effective modulo in the cast down to 16 bit
 }
 
-void ENClinTest()
-{
-    while(1)
-    {
-      static uint8_t pos = 0;
-      
-      hallSetThrottle(0.06);//throttle percent
-      writeState(pos%6);
-      pos++;
-      pos %= 42;
-
-      delay(500);
-      
-      for(uint8_t i = 0; i < 50; i++)
-      {
-        Serial.print(pos);
-        Serial.print(" ");
-        Serial.print(pos % 6);
-        Serial.print(" ");
-        Serial.println(ENCreadEAngle());
-        delay(10);
-      }
-    }
-}
 
 void ENCvarTest()
 {
