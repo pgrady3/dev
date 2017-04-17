@@ -6,6 +6,8 @@
 #define LOAD_SCK 1
 #define LOAD_DATA 0
 
+int32_t avgLoad = 0;
+
 void setup() {
     Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
     INAinit();
@@ -44,13 +46,19 @@ int32_t LoadRead()
   digitalWrite(LOAD_SCK, LOW);
   delayMicroseconds(1);
 
-  return resp << 8;//change to 2's complement
+  resp = resp << 8;
+  
+  avgLoad += (resp - avgLoad) / 64;
+  
+  return avgLoad;//change to 2's complement
 }
 
 void loop() {
-  Serial.print(INAvoltage());
-  Serial.print(" ");
-  Serial.print(INAcurrent() * 1000);
+  float voltage = INAvoltage();
+  float current = INAcurrent();
+  float power = voltage * current;
+  
+  Serial.print(power);
   Serial.print(" ");
   Serial.println(LoadRead());
   

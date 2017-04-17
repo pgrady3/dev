@@ -27,6 +27,8 @@ float currentSpeed = 0.0;
 float temperature = 0.0;
 float InaVoltage = 0.0;
 float InaCurrent = 0.0;
+float InaPower = 0;
+
 float batteryVoltage = 0.0;
 bool batteryOK = true;
 
@@ -73,14 +75,16 @@ float readCell(uint8_t cell)
 }
 
 void loop() {
-  float cellVolts[NUMBER_OF_CELLS];
 
-  float InaVoltage = INAvoltage();
-  float InaCurrent = INAcurrent();
+  InaVoltage = INAvoltage();
+  InaCurrent = INAcurrent();
+  InaPower = InaVoltage * InaCurrent;
+  
   float currentInaTime = millis();
-  energyUsed += (InaVoltage * InaCurrent) * ((float)(currentInaTime - lastInaMeasurement));
+  energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
   lastInaMeasurement = currentInaTime;
-  float average = 0.0;
+  /*float average = 0.0;
+  
   for (uint8_t i = 0; i < NUMBER_OF_CELLS; i++)
   {
     float result = readCell(i);
@@ -98,12 +102,14 @@ void loop() {
   }
 
   // 2.74889357 is the circumfence of the wheels.
-  distance = ((float)countIntervals) / 8.0 * 2.74889357;
+  distance = ((float)countIntervals) / 8.0 * 2.74889357;*/
 
   //TODO: calculate speed here.
 
   // Not sure where to put the write function.
   writeToBtSd();
+
+  delay(100);
 }
 
 float INAcurrent()
@@ -159,9 +165,9 @@ void writeToBtSd() {
                      String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
                      String(batteryOK) + " "+ String(batteryVoltage) + String(millis()) + " ";
   Serial.println(outputStr);
-  Serial2.println(outputStr);
-  myFile = SD.open("data.txt", FILE_WRITE);
+  //Serial2.println(outputStr);
+  /*myFile = SD.open("data.txt", FILE_WRITE);
   myFile.println(outputStr);
-  myFile.close();
+  myFile.close();*/
 }
 
