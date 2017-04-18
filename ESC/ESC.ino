@@ -20,7 +20,7 @@ void setup(){
 }
 
 void loop(){
-  FOCsetThrottle(12000);
+  FOCsetThrottle(30000);
   delay(1);
 
   if(memPos == MEM_SIZE)

@@ -6,7 +6,15 @@
 #define LOAD_SCK 1
 #define LOAD_DATA 0
 
+#define HALL 23
+
+#define LOAD_ZERO (15121605.0 + LOAD_SCALE * 0.1)
+#define LOAD_SCALE (26159540.0 / 3.0107)  //convert to N*m
+
 int32_t avgLoad = 0;
+uint32_t curTime = 0;
+uint32_t lastTime = 0;
+int32_t avgTime = 100000;
 
 void setup() {
     Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -17,6 +25,9 @@ void setup() {
     pinMode(LED1, OUTPUT);
     pinMode(LED2, OUTPUT);
 
+    pinMode(HALL, INPUT);
+    attachInterrupt(HALL, hallISR, FALLING);
+
     pinMode(LOAD_SCK, OUTPUT);
     pinMode(LOAD_DATA, INPUT);
     digitalWrite(LOAD_SCK, LOW);
@@ -25,7 +36,21 @@ void setup() {
     digitalWrite(LED2, HIGH);
 }
 
-int32_t LoadRead()
+void hallISR()
+{
+  static uint32_t b = 0;
+  digitalWriteFast(LED2, (b++ & 1));
+  
+  curTime = micros();
+  
+  int32_t dif = curTime - lastTime;
+  
+  avgTime += (dif - avgTime) / 8;
+  
+  lastTime = curTime;
+}
+
+float LoadRead()
 {
   if(digitalRead(LOAD_DATA))
     return 0;//not ready
@@ -48,22 +73,34 @@ int32_t LoadRead()
 
   resp = resp << 8;
   
-  avgLoad += (resp - avgLoad) / 64;
+  avgLoad += (resp - avgLoad) / 10;
+
+  float load = ((float)avgLoad - LOAD_ZERO) / LOAD_SCALE;
+  //float load = avgLoad;
+  //float load = (float)avgLoad - LOAD_ZERO;
   
-  return avgLoad;//change to 2's complement
+  return load;//change to 2's complement
 }
 
 void loop() {
   float voltage = INAvoltage();
   float current = INAcurrent();
   float power = voltage * current;
-  
-  Serial.print(power);
+  float omega = 2.0 * 3.1415 / (avgTime * 8) * 1000000;
+  float torque = LoadRead();
+
+  Serial.print(omega);
   Serial.print(" ");
-  Serial.println(LoadRead());
+  Serial.print(torque);
+  Serial.print(" ");
+  Serial.print(omega * torque);
+  Serial.print(" ");
+  Serial.println(power);
   
   while(digitalRead(LOAD_DATA))
     ;
+
+  delay(20);
 }
 
 float INAcurrent()
