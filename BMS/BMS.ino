@@ -17,7 +17,9 @@
 #define CELL_MIN 2.7
 #define CELL_MAX 4.2
 #define MAX_TEMPERATURE 50.0
+#define BUFFER_LENGTH 64
 
+uint8_t head = 0;
 uint32_t lastHallPulse = 0;
 uint32_t lastInaMeasurement = 0;
 uint32_t countIntervals = 0;
@@ -27,10 +29,12 @@ float currentSpeed = 0.0;
 float temperature = 0.0;
 float InaVoltage = 0.0;
 float InaCurrent = 0.0;
-float InaPower = 0;
-
 float batteryVoltage = 0.0;
+float power = 0.0;
+
 bool batteryOK = true;
+
+uint32_t intervalBuffer[BUFFER_LENGTH];
 
 File myFile;
 
@@ -44,19 +48,20 @@ void setup() {
 
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
-
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
   pinMode(S2, OUTPUT);
   pinMode(S3, OUTPUT);
-
   pinMode(RELAY, OUTPUT);
 
   digitalWrite(LED1, HIGH);
   digitalWrite(LED2, HIGH);
-
   digitalWrite(RELAY, HIGH);
 
+  for (int i = 0; i < BUFFER_LENGTH; i++) {
+    intervalBuffer[i] = 0;
+  }
+  
   attachInterrupt(digitalPinToInterrupt(HALL), countHallPulse, FALLING);
 }
 
@@ -78,18 +83,17 @@ void loop() {
 
   InaVoltage = INAvoltage();
   InaCurrent = INAcurrent();
-  InaPower = InaVoltage * InaCurrent;
+  power = InaVoltage * InaCurrent;
   
   float currentInaTime = millis();
-  energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
+  energyUsed += (InaVoltage * InaCurrent) * ((float)(currentInaTime - lastInaMeasurement));
   lastInaMeasurement = currentInaTime;
-  /*float average = 0.0;
   
+  float average = 0.0;
   for (uint8_t i = 0; i < NUMBER_OF_CELLS; i++)
   {
     float result = readCell(i);
     average += result;
-    cellVolts[i] = result;
     if ((result < CELL_MIN) || (result > CELL_MAX)) {
       batteryOK = false;
     }
@@ -100,16 +104,11 @@ void loop() {
   if (temperature > MAX_TEMPERATURE) {
     batteryOK = false;
   }
-
   // 2.74889357 is the circumfence of the wheels.
-  distance = ((float)countIntervals) / 8.0 * 2.74889357;*/
-
-  //TODO: calculate speed here.
-
-  // Not sure where to put the write function.
+  distance = ((float)countIntervals) / 8.0 * 2.74889357;
+  //Unit is now m/s.
+  currentSpeed = getSpeed();
   writeToBtSd();
-
-  delay(100);
 }
 
 float INAcurrent()
@@ -156,18 +155,56 @@ void countHallPulse() {
   uint32_t thisInterval = current - lastHallPulse;
   if (thisInterval < 1000) {
     countIntervals++;
+    writeBuffer(thisInterval);
   }
   lastHallPulse = current;
 }
 
 void writeToBtSd() {
-  String outputStr = String(InaVoltage) + " " + String(InaCurrent) + " " + String(currentSpeed) + " " +
-                     String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) + String(millis()) + " ";
+  String outputStr = String(InaVoltage) + " " + String(InaCurrent) + " " + String(power) + " " +
+                     String(currentSpeed) + " " +
+                     String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " +
+                     String(batteryOK) + " " + String(batteryVoltage) + String(millis()) + " ";
   Serial.println(outputStr);
-  //Serial2.println(outputStr);
-  /*myFile = SD.open("data.txt", FILE_WRITE);
+  Serial2.println(outputStr);
+  myFile = SD.open("data.txt", FILE_WRITE);
   myFile.println(outputStr);
-  myFile.close();*/
+  myFile.close();
 }
+
+float bufferMean() {
+  float sum = 0.0;
+  float counts = 0.0;
+  for (int i = 0; i < BUFFER_LENGTH; i++) {
+    if (intervalBuffer[i] != 0) {
+      sum += (float)intervalBuffer[i];
+      counts += 1.0;
+    }
+  }
+  if (counts < 0.01) {
+    return 0;
+  }
+  return sum / counts;
+}
+
+void writeBuffer(uint32_t data) {
+  intervalBuffer[head] = data;
+  if (head + 1 == BUFFER_LENGTH) {
+    head = 0;
+  } else {
+    head++;
+  }
+}
+
+float getSpeed() {
+  float averageInterval = bufferMean();
+  if (averageInterval == 0) {
+    return 0.0;
+  }
+  // Assume we have 8 intervals for one revolution.
+  float radianSpeed = (360.0 / 8.0) / (averageInterval / 1000.0);
+  return (radianSpeed / 360) * 2.74889357;
+}
+
+
 
