@@ -6,13 +6,13 @@ class DEVData:
         if json is None:
             self.sessionName = self.timeStamp = self.batteryStatus = ''
             self.voltage = self.current = self.speed = self.mileage = \
-                self.longitude = self.latitude = self.altitude = \
-                self.energyUsed = 0.0
+                self.longitude = self.latitude = self.altitude = self.power = \
+                self.energyUsed = self.temperature = self.batteryVoltage = 0.0
             self.msSinceStart = self.heading = 0
             return
-        fields = ['sessionName', 'timeStamp', 'voltage', 'current', 'speed', 'mileage',
+        fields = ['sessionName', 'timeStamp', 'voltage', 'current', 'power', 'speed', 'mileage',
                   'longitude', 'latitude', 'altitude', 'msSinceStart', 'heading', 'energyUsed',
-                  'batteryStatus']
+                  'batteryStatus', 'temperature', 'batteryVoltage']
         for i in fields:
             if not (i in json):
                 raise ValueError
