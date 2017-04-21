@@ -165,7 +165,7 @@ void writeToBtSd() {
                      String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
                      String(batteryOK) + " "+ String(batteryVoltage) + String(millis()) + " ";
   Serial.println(outputStr);
-  //Serial2.println(outputStr);
+  Serial2.println(outputStr);
   /*myFile = SD.open("data.txt", FILE_WRITE);
   myFile.println(outputStr);
   myFile.close();*/
