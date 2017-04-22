@@ -18,8 +18,27 @@ public class MainActivity extends AppCompatActivity {
     private TextView mainText;
     private BtDataService dataService;
     private dataConnection connection;
-    private Thread uiThread;
+    private UiThread uiThread;
     boolean isBound = false;
+
+    private class UiThread extends Thread{
+        @Override
+        public void run() {
+            try {
+                while (!isInterrupted()) {
+                    Thread.sleep(1000);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateUi();
+                        }
+                    });
+                }
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Cannot update UI", e);
+            }
+        }
+    }
 
     private class dataConnection implements ServiceConnection {
         @Override
@@ -51,24 +70,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableBtIntent, 1);
         }
 
-        uiThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    while (!isInterrupted()) {
-                        Thread.sleep(1000);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                //updateUi();
-                            }
-                        });
-                    }
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Cannot update UI", e);
-                }
-            }
-        };
+
         startService(new Intent(this, BtDataService.class));
         connection = new dataConnection();
     }
@@ -77,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         bindService(new Intent(this, BtDataService.class), connection, Context.BIND_AUTO_CREATE);
+        uiThread = new UiThread();
         uiThread.start();
     }
 
@@ -93,7 +96,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        unbindService(connection);
+        uiThread.interrupt();
+        if (isBound)
+            unbindService(connection);
     }
 
     @Override
@@ -102,9 +107,14 @@ public class MainActivity extends AppCompatActivity {
         stopService(new Intent(this, BtDataService.class));
     }
 
-    private void updateUi(){
+    private void updateUi() {
         Log.i(TAG, "Trying to update UI");
-        String result = dataService.getMostRecent().toString();
+        String result = "";
+        DataObj obj = null;
+        if (isBound)
+            obj = dataService.getMostRecent();
+        if (obj != null)
+            result = obj.toString();
         mainText.setText(result);
         Log.i(TAG, "Update UI successful.");
     }
