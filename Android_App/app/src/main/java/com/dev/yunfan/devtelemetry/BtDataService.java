@@ -17,20 +17,18 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-
+//Isaac is great.
+//Isaac is my friend. He insists on keeping the line above. -Yunfanß
 public class BtDataService extends Service {
     private static final String TAG = "DATA_SERVICE";
     private static BluetoothAdapter btAdapter;
     private static BluetoothSocket btSocket;
     private static final UUID MY_UUID = UUID.randomUUID();
-
-    private ConcurrentLinkedQueue<DataObj> dataCache = new ConcurrentLinkedQueue<>();
+    private LinkedBlockingQueue<DataObj> dataCache = new LinkedBlockingQueue<>(10000);
     private String sessionName = "default";
     private DataObj mostUpToDate;
     private final Binder binder = new LocalBinder();
@@ -41,7 +39,6 @@ public class BtDataService extends Service {
             return BtDataService.this;
         }
     }
-
 
     public BtDataService() {
     }
@@ -109,7 +106,8 @@ public class BtDataService extends Service {
         } catch (IOException e) {
             Log.e(TAG, "Something happened during BT connect. Try again with reflection.", e);
             try {
-                btSocket = (BluetoothSocket) btDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class}).invoke(btDevice, 1);
+                btSocket = (BluetoothSocket) btDevice.getClass().getMethod("createRfcommSocket",
+                        new Class[]{int.class}).invoke(btDevice, 1);
                 btSocket.connect();
             } catch (IOException refE) {
                 Log.e(TAG, "Reflection failed", refE);
@@ -214,12 +212,14 @@ public class BtDataService extends Service {
 
         @Override
         public void run() {
-            while (!dataCache.isEmpty()) {
-                DataObj dataObj = dataCache.peek();
+            while (!isInterrupted()) {
                 try {
-                    sendRequest(dataObj);
-                    Log.e(TAG, "HTTP POST Success!");
-                    dataCache.remove(dataObj);
+                    if (!dataCache.isEmpty()) {
+                        DataObj dataObj = dataCache.peek();
+                        sendRequest(dataObj);
+                        Log.e(TAG, "HTTP POST Success!");
+                        dataCache.remove(dataObj);
+                    }
                 } catch (Exception e) {
                     Log.e(TAG, "HTTP failed", e);
                 }
@@ -243,8 +243,10 @@ public class BtDataService extends Service {
             httpConnection.setRequestProperty("Content-Length", "" + body.length());
             httpConnection.getOutputStream().write(body.getBytes("UTF-8"));
             if (httpConnection.getResponseCode() != 200) {
-                Log.e(TAG, ""+httpConnection.getResponseCode());
+                Log.e(TAG, "" + httpConnection.getResponseCode());
                 throw new IOException("Connection failed" + httpConnection.getResponseCode());
+            } else {
+                Log.i(TAG, "HTTP Success");
             }
         }
     }
