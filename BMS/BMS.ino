@@ -92,8 +92,11 @@ void loop() {
   float currentInaTime = millis();
   energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
   lastInaMeasurement = currentInaTime;
+
+  currentSpeed = 1000000.0 / avgdT * TICK_DIST; 
+  if(micros() - lastHallPulse > 2000000)
+    currentSpeed = 0;
   
-  currentSpeed = 1000000 / avgdT * WHEEL_CIRC; 
   //currentSpeed = avgdT;
   
   /*float average = 0.0;
