@@ -31,6 +31,15 @@ float getThrottle();
 float getThrottle()
 {
   uint16_t rawThrottle = analogRead(THROTTLE);
+
+  analogReadRes(12); // Set 12-bit ADC resolution (default is 10)
+  ADC0_SC2 = ADC_SC2_ADTRG; // Hardware triggered (comes from PDB)
+  ADC0_SC3 = 0; // Not continuous, no averaging
+  ADC0_SC1A = 8; // Channel A set to measure A-phase current, channel 8, ARM pin 35, teensy pin 16
+  ADC0_SC1B = 9 | ADC_SC1_AIEN; // Interrupt enabled for channel B, 
+                                       // and it measures B-phase current, ARM pin 36, teensy pin 17
+ 
+  
   float throttle = (rawThrottle - MIN_THROTTLE) / (float)(MAX_THROTTLE - MIN_THROTTLE);
   
   if(throttle > 1)

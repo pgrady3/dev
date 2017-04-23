@@ -21,6 +21,11 @@ volatile uint16_t anglemem[MEM_SIZE];
 uint32_t memPos = 0;
 uint32_t ticks = 0;
 
+volatile uint16_t oldAngle = 0;
+volatile uint16_t isrAngle = 0;
+volatile int16_t dAngle = 0;
+volatile int16_t avgDAngle = 0;
+
 int32_t throttle = 0;
 
 //sets up ADC and timers
@@ -132,22 +137,28 @@ void adc0_irq()
   int16_t phB_current = ADC0_RB - 2050;
   // FOC code can go here:
 
-  if(memPos < MEM_SIZE && throttle == 12000)
+  /*if(memPos < MEM_SIZE && throttle == 60000)
   {
     anglemem[memPos] = ENCreadEAngle();
     phAmem[memPos] = phA_current;
     phBmem[memPos++] = phB_current;
-  }
+  }*/
 
   ticks++;
 
-  if((ticks & 0x1) == 0)
-    ENCgetAbsAngle();
-  
   if(ticks & 1)//The loop is called at 20kHz, so reduce calling rate to 10kHz
     return;
   
   digitalWrite(LED2, HIGH);
+
+  ENCgetAbsAngle();
+
+  isrAngle = ENCreadEAngle();
+  dAngle = isrAngle - oldAngle;
+
+  avgDAngle += (dAngle - avgDAngle) / 64;
+  
+  oldAngle = isrAngle;
   
   Park_Type pp;
   SVM_Type ss;
@@ -156,7 +167,7 @@ void adc0_irq()
   //pp.Qs = 0;
   pp.Ds = 000;
   pp.Qs = -throttle;
-  pp.Theta = ENCreadEAngle();
+  pp.Theta = isrAngle + (avgDAngle * 2);
   inv_park_transform(&pp);
   ss.Alpha = pp.Alpha;
   ss.Beta = pp.Beta;

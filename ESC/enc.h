@@ -6,7 +6,7 @@
 #define ENC_PROG 3
 
 //#define ENC_OFFSET 25806
-#define ENC_OFFSET 43049
+#define ENC_OFFSET 42049
 
 uint16_t curAngle = 0;
 uint32_t encTicks = 0;
@@ -29,8 +29,8 @@ void ENCinit()
   pinMode(ENC_A, INPUT);
   pinMode(ENC_B, INPUT);
 
-  attachInterrupt(ENC_A, encISRA, CHANGE);
-  attachInterrupt(ENC_B, encISRB, CHANGE);
+  //attachInterrupt(ENC_A, encISRA, CHANGE);
+  //attachInterrupt(ENC_B, encISRB, CHANGE);
 
   NVIC_SET_PRIORITY(IRQ_PORTB, 0); // Zero = highest priority
   NVIC_SET_PRIORITY(IRQ_PORTD, 0); // Zero = highest priority

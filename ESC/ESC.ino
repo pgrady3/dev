@@ -16,8 +16,6 @@ void setup(){
 
   pinMode(THROTTLE, INPUT);
   
-  delay(3000);
-
   //FOCFindOffset();
   //ENCFindVar();
   //FOCsetThrottle(15000);
@@ -27,22 +25,21 @@ void setup(){
 void loop(){
 
   float tempThrottle = getThrottle() * 60000;
-  //Serial.println(getThrottle());
-  Serial.println(ENCreadEAngle());
+
   if(tempThrottle > actualThrottle)
     actualThrottle += 1000;
   else
     actualThrottle = tempThrottle;
     
   FOCsetThrottle(actualThrottle);
-  delay(20);
-  
-  
-  /*delay(1);
+  delay(30);
 
-  if(memPos == MEM_SIZE)
+  int32_t temp = avgDAngle;
+  //Serial.println(temp);
+  
+  /*if(memPos == MEM_SIZE)
   {
-    //FOCsetThrottle(0);
+    FOCsetThrottle(0);
     delay(3000);
     for(uint32_t i = 0; i < MEM_SIZE; i++)
     {
