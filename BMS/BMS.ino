@@ -26,15 +26,15 @@ volatile uint32_t countIntervals = 0;
 volatile int32_t avgdT = 1000000;
 volatile uint32_t distTicks = 0;
 
-float energyUsed = 0.0;
-float distance = 0.0;
-float currentSpeed = 0.0;
-float temperature = 0.0;
-float InaVoltage = 0.0;
-float InaCurrent = 0.0;
-float InaPower = 0;
+double energyUsed = 0.0;
+double distance = 0.0;
+double currentSpeed = 0.0;
+double temperature = 0.0;
+double InaVoltage = 0.0;
+double InaCurrent = 0.0;
+double InaPower = 0;
+double batteryVoltage = 0.0;
 
-float batteryVoltage = 0.0;
 bool batteryOK = true;
 
 File myFile;
@@ -69,7 +69,7 @@ void setup() {
   myFile = SD.open("data.txt", FILE_WRITE);
 }
 
-float readCell(uint8_t cell)
+double readCell(uint8_t cell)
 {
   digitalWrite(S0, cell & 1);
   cell = cell >> 1;
@@ -79,7 +79,7 @@ float readCell(uint8_t cell)
   cell = cell >> 1;
   digitalWrite(S3, cell & 1);
   delayMicroseconds(1000);
-  float volt = (float)analogRead(14) / 1024 * 3.3 / 2.2 * 26.2;
+  double volt = (double)analogRead(14) / 1024 * 3.3 / 2.2 * 26.2;
   return volt;
 }
 
@@ -89,7 +89,7 @@ void loop() {
   InaCurrent = INAcurrent();
   InaPower = InaVoltage * InaCurrent;
   
-  float currentInaTime = millis();
+  double currentInaTime = millis();
   energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
   lastInaMeasurement = currentInaTime;
 
@@ -99,11 +99,11 @@ void loop() {
   
   //currentSpeed = avgdT;
   
-  /*float average = 0.0;
+  /*double average = 0.0;
   
   for (uint8_t i = 0; i < NUMBER_OF_CELLS; i++)
   {
-    float result = readCell(i);
+    double result = readCell(i);
     average += result;
     cellVolts[i] = result;
     if ((result < CELL_MIN) || (result > CELL_MAX)) {
@@ -111,7 +111,6 @@ void loop() {
     }
   }
   batteryVoltage = average / NUMBER_OF_CELLS;
-
   //TODO: measure temperature here.
   if (temperature > MAX_TEMPERATURE) {
     batteryOK = false;
@@ -127,13 +126,13 @@ void loop() {
   delay(100);
 }
 
-float INAcurrent()
+double INAcurrent()
 {
   int16_t raw = INAreadReg(0x01); //deliberate bad cast! the register is stored as two's complement
   return raw * 0.0000025 / 0.001 ; //2.5uV lsb and 1mOhm resistor
 }
 
-float INAvoltage()
+double INAvoltage()
 {
   uint16_t raw = INAreadReg(0x02);
   return raw * 0.00125; //multiply by 1.25mV LSB
@@ -180,13 +179,12 @@ void countHallPulse() {
 }
 
 void writeToBtSd() {
-  String outputStr = String(InaVoltage) + " " + String(InaCurrent) + " " + String(currentSpeed) + " " +
+  String outputStr = String(InaVoltage) + " " + String(InaCurrent) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
                      String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) + String(millis()) + " ";
+                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis());
   Serial.println(outputStr);
   Serial2.println(outputStr);
   
   myFile.println(outputStr);
   myFile.flush();
 }
-
