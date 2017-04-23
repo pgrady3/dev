@@ -7,7 +7,7 @@
 #include "enc.h"
 #include "foc.h"
 
-float actualThrottle = 0;
+int32_t actualThrottle = 0;
 
 void setup(){
   init();
@@ -34,10 +34,10 @@ void loop(){
   FOCsetThrottle(actualThrottle);
   delay(30);
 
-  int32_t temp = avgDAngle;
+  //int32_t temp = avgDAngle;
   //Serial.println(temp);
   
-  /*if(memPos == MEM_SIZE)
+  if(memPos == MEM_SIZE)
   {
     FOCsetThrottle(0);
     delay(3000);
@@ -53,7 +53,7 @@ void loop(){
 
     while(1)
       ;
-  }*/
+  }
 }
 
 

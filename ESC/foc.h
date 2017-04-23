@@ -137,12 +137,12 @@ void adc0_irq()
   int16_t phB_current = ADC0_RB - 2050;
   // FOC code can go here:
 
-  /*if(memPos < MEM_SIZE && throttle == 60000)
+  if(memPos < MEM_SIZE && throttle > 30000)
   {
     anglemem[memPos] = ENCreadEAngle();
     phAmem[memPos] = phA_current;
     phBmem[memPos++] = phB_current;
-  }*/
+  }
 
   ticks++;
 
