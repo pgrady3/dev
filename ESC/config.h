@@ -20,8 +20,8 @@
 #define LED1 9
 #define LED2 8
 
-#define MAX_THROTTLE  1000
-#define MIN_THROTTLE  300
+#define MAX_THROTTLE  4000
+#define MIN_THROTTLE  1200
 
 uint16_t DRVread(uint8_t addr);
 void DRVwrite(uint8_t addr, uint16_t data);

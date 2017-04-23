@@ -17,10 +17,15 @@
 #define CELL_MIN 2.7
 #define CELL_MAX 4.2
 #define MAX_TEMPERATURE 50.0
+#define WHEEL_CIRC 1.492
+#define TICK_DIST (WHEEL_CIRC / 8)
 
-uint32_t lastHallPulse = 0;
-uint32_t lastInaMeasurement = 0;
-uint32_t countIntervals = 0;
+volatile uint32_t lastHallPulse = 0;
+volatile uint32_t lastInaMeasurement = 0;
+volatile uint32_t countIntervals = 0;
+volatile int32_t avgdT = 1000000;
+volatile uint32_t distTicks = 0;
+
 float energyUsed = 0.0;
 float distance = 0.0;
 float currentSpeed = 0.0;
@@ -57,7 +62,11 @@ void setup() {
 
   digitalWrite(RELAY, HIGH);
 
-  attachInterrupt(digitalPinToInterrupt(HALL), countHallPulse, FALLING);
+  pinMode(HALL, INPUT_PULLUP);
+
+  attachInterrupt(HALL, countHallPulse, FALLING);
+
+  myFile = SD.open("data.txt", FILE_WRITE);
 }
 
 float readCell(uint8_t cell)
@@ -83,6 +92,10 @@ void loop() {
   float currentInaTime = millis();
   energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
   lastInaMeasurement = currentInaTime;
+  
+  currentSpeed = 1000000 / avgdT * WHEEL_CIRC; 
+  //currentSpeed = avgdT;
+  
   /*float average = 0.0;
   
   for (uint8_t i = 0; i < NUMBER_OF_CELLS; i++)
@@ -99,14 +112,13 @@ void loop() {
   //TODO: measure temperature here.
   if (temperature > MAX_TEMPERATURE) {
     batteryOK = false;
-  }
+  }*/
 
   // 2.74889357 is the circumfence of the wheels.
-  distance = ((float)countIntervals) / 8.0 * 2.74889357;*/
+  distance = distTicks * TICK_DIST;
+  
 
-  //TODO: calculate speed here.
-
-  // Not sure where to put the write function.
+  
   writeToBtSd();
 
   delay(100);
@@ -152,12 +164,16 @@ uint16_t INAreadReg(uint8_t reg)
 }
 
 void countHallPulse() {
-  uint32_t current = millis();
-  uint32_t thisInterval = current - lastHallPulse;
-  if (thisInterval < 1000) {
-    countIntervals++;
-  }
+  uint32_t current = micros();
+  int32_t dT = current - lastHallPulse;
+
+  avgdT += (dT - avgdT) / 16;
+
+  distTicks++;
+  
   lastHallPulse = current;
+
+  digitalWrite(LED1, (distTicks) & 1);
 }
 
 void writeToBtSd() {
@@ -166,8 +182,8 @@ void writeToBtSd() {
                      String(batteryOK) + " "+ String(batteryVoltage) + String(millis()) + " ";
   Serial.println(outputStr);
   Serial2.println(outputStr);
-  /*myFile = SD.open("data.txt", FILE_WRITE);
+  
   myFile.println(outputStr);
-  myFile.close();*/
+  myFile.flush();
 }
 

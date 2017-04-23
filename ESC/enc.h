@@ -5,7 +5,8 @@
 #define ENC_CS 0
 #define ENC_PROG 3
 
-#define ENC_OFFSET 25806
+//#define ENC_OFFSET 25806
+#define ENC_OFFSET 43049
 
 uint16_t curAngle = 0;
 uint32_t encTicks = 0;
@@ -97,26 +98,3 @@ uint16_t ENCreadEAngle()
   return rot;//effective modulo in the cast down to 16 bit
 }
 
-
-void ENCvarTest()
-{
-    pinMode(ENC_PROG, OUTPUT);
-    digitalWrite(ENC_CS, HIGH);
-    digitalWrite(ENC_PROG, HIGH);
-    delay(1);
-    digitalWrite(ENC_CS, LOW);
-    delay(1);
-    digitalWrite(ENC_PROG, LOW);
-
-    while(1)
-    {
-      static uint8_t pos = 0;
-      
-      hallSetThrottle(0.07);//throttle percent
-      writeState(pos++);
-      pos %= 6;
-      
-      Serial.println(ENCread()>>6);
-      delay(13);
-    }
-}

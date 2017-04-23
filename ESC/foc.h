@@ -8,6 +8,7 @@ void dummyISR();
 void FOCsetThrottle(int32_t t);
 void Set_PWM_Duty_Scaled(long pwma, long pwmb, long pwmc);
 void FOCFindOffset();
+void ENCFindVar();
 
 int FTM_Mod_Val;
 
@@ -140,7 +141,7 @@ void adc0_irq()
 
   ticks++;
 
-  if((ticks & 0xF) == 0)
+  if((ticks & 0x1) == 0)
     ENCgetAbsAngle();
   
   if(ticks & 1)//The loop is called at 20kHz, so reduce calling rate to 10kHz
@@ -150,9 +151,11 @@ void adc0_irq()
   
   Park_Type pp;
   SVM_Type ss;
-  
+
+  //pp.Ds = throttle;
+  //pp.Qs = 0;
   pp.Ds = 000;
-  pp.Qs = throttle;
+  pp.Qs = -throttle;
   pp.Theta = ENCreadEAngle();
   inv_park_transform(&pp);
   ss.Alpha = pp.Alpha;
@@ -199,3 +202,47 @@ void Set_PWM_Duty_Scaled(long pwma, long pwmb, long pwmc)
                (pwmc*FTM_Mod_Val) >> 16);
 }
 
+
+void ENCFindVar()
+{
+  NVIC_DISABLE_IRQ(IRQ_ADC0); // ADC complete interrupt
+
+  pinMode(ENC_PROG, OUTPUT);
+  digitalWrite(ENC_CS, HIGH);
+  digitalWrite(ENC_PROG, HIGH);
+  delay(1);
+  digitalWrite(ENC_CS, LOW);
+  delay(1);
+  digitalWrite(ENC_PROG, LOW);
+  
+  for(int i = 0;; i+= 6000)
+  {
+      uint16_t angle = i;
+    
+      Park_Type pp;
+      SVM_Type ss;
+      
+      pp.Ds = 3000;
+      pp.Qs = 0000;
+      pp.Theta = angle;
+      inv_park_transform(&pp);
+      ss.Alpha = pp.Alpha;
+      ss.Beta = pp.Beta;
+      svm_calc(&ss);
+    
+      Set_PWM_Duty_Scaled(ss.tA, ss.tB, ss.tC);
+
+      if(i == 0)
+        delay(1000);
+        
+      delay(1);
+
+      ENCgetAbsAngle();
+      
+      Serial.println(ENCread()>>6);
+      delay(13);
+  }
+
+  while(1)//dont return
+    ;
+}
