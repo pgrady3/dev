@@ -6,7 +6,7 @@
 #define ENC_PROG 3
 
 //#define ENC_OFFSET 25806
-#define ENC_OFFSET 43649
+#define ENC_OFFSET 42349
 
 uint16_t curAngle = 0;
 uint32_t encTicks = 0;

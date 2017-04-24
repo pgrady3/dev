@@ -18,7 +18,7 @@ void setup(){
   
   //FOCFindOffset();
   //ENCFindVar();
-  //FOCsetThrottle(15000);
+  //FOCsetThrottle(10000);
   delay(3000);
 }
 
@@ -32,12 +32,13 @@ void loop(){
     actualThrottle = tempThrottle;
     
   FOCsetThrottle(actualThrottle);
+  //FOCsetThrottle(60000);
   delay(30);
 
   //int32_t temp = avgDAngle;
   //Serial.println(temp);
   
-  if(memPos == MEM_SIZE)
+  /*if(memPos == MEM_SIZE)
   {
     FOCsetThrottle(0);
     delay(3000);
@@ -53,7 +54,7 @@ void loop(){
 
     while(1)
       ;
-  }
+  }*/
 }
 
 
