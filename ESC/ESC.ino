@@ -16,7 +16,7 @@ void setup(){
 
   pinMode(THROTTLE, INPUT);
   
-  //FOCFindOffset();
+  FOCFindOffset();
   //ENCFindVar();
   //FOCsetThrottle(10000);
   delay(3000);

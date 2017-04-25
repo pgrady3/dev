@@ -5,8 +5,8 @@
 #define ENC_CS 0
 #define ENC_PROG 3
 
-//#define ENC_OFFSET 25806
-#define ENC_OFFSET 42349
+#define ENC_OFFSET 24994  //DYNO
+//#define ENC_OFFSET 42349  //CAR
 
 uint16_t curAngle = 0;
 uint32_t encTicks = 0;
