@@ -20,6 +20,10 @@
 #define WHEEL_CIRC 1.492
 #define TICK_DIST (WHEEL_CIRC / 8)
 
+#define WHEEL_TICKS 8
+volatile uint32_t tickTimes[WHEEL_TICKS];
+volatile uint32_t tickPos;
+
 volatile uint32_t lastHallPulse = 0;
 volatile uint32_t lastInaMeasurement = 0;
 volatile uint32_t countIntervals = 0;
@@ -93,7 +97,7 @@ void loop() {
   energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
   lastInaMeasurement = currentInaTime;
 
-  currentSpeed = 1000000.0 / avgdT * TICK_DIST; 
+  currentSpeed = 1000000.0 / avgdT * WHEEL_CIRC; 
   if(micros() - lastHallPulse > 2000000)
     currentSpeed = 0;
   
@@ -167,9 +171,11 @@ uint16_t INAreadReg(uint8_t reg)
 
 void countHallPulse() {
   uint32_t current = micros();
-  int32_t dT = current - lastHallPulse;
 
-  avgdT += (dT - avgdT) / 16;
+  tickTimes[tickPos++] = current;
+  tickPos %= WHEEL_TICKS;
+
+  avgdT = current - tickTimes[tickPos];
 
   distTicks++;
   
