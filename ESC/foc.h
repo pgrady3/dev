@@ -133,8 +133,8 @@ void dummyISR()
 void adc0_irq()
 {
   // Clear the ADC interrupt flags by reading results  
-  int16_t phA_current = ADC0_RA - 2054;
-  int16_t phB_current = ADC0_RB - 2050;
+  volatile int16_t phA_current = ADC0_RA - 2054;//DO NOT COMMENT THESE OUT, reading value changes state
+  volatile int16_t phB_current = ADC0_RB - 2050;
   // FOC code can go here:
 
   /*if(memPos < MEM_SIZE && throttle > 30000)
@@ -167,7 +167,7 @@ void adc0_irq()
   //pp.Qs = 0;
   pp.Ds = 000;
   pp.Qs = -throttle;
-  pp.Theta = isrAngle + (avgDAngle * 2);
+  pp.Theta = isrAngle + (avgDAngle * 2.5);
   inv_park_transform(&pp);
   ss.Alpha = pp.Alpha;
   ss.Beta = pp.Beta;

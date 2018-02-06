@@ -15,9 +15,9 @@ void setup(){
   FOCinit();
 
   pinMode(THROTTLE, INPUT);
-  
-  FOCFindOffset();
-  //ENCFindVar();
+
+  //ENCFindVar(); //Make sure to cycle power to encoder after doing this
+  //FOCFindOffset();
   //FOCsetThrottle(10000);
   delay(3000);
 }
@@ -26,6 +26,8 @@ void loop(){
 
   float tempThrottle = getThrottle() * 60000;
 
+  //Serial.println(tempThrottle);
+  
   if(tempThrottle > actualThrottle)
     actualThrottle += 1000;
   else
