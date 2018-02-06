@@ -1,118 +1,77 @@
 #include <i2c_t3.h>
 
-#define LED1 22
+#define LED1 3
 #define LED2 21
 
-#define LOAD_SCK 1
-#define LOAD_DATA 0
-
+#define RELAY 2
 #define HALL 23
+#define WHEEL_TICKS 54
+volatile uint32_t tickTimes[WHEEL_TICKS];
+volatile uint32_t tickPos;
 
-#define LOAD_ZERO (15121605.0 + LOAD_SCALE * 0.1)
-#define LOAD_SCALE (26159540.0 / 3.0107)  //convert to N*m
-
-int32_t avgLoad = 0;
-uint32_t curTime = 0;
-uint32_t lastTime = 0;
-int32_t avgTime = 100000;
+volatile uint32_t lastHallPulse = 0;
+volatile uint32_t lastInaMeasurement = 0;
+volatile uint32_t countIntervals = 0;
+volatile int32_t avgdT = 1000000;
+volatile uint32_t distTicks = 0;
 
 void setup() {
-    Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
-    INAinit();
-    
-    Serial.begin(115200);
+  Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
+  INAinit();
 
-    pinMode(LED1, OUTPUT);
-    pinMode(LED2, OUTPUT);
+  Serial.begin(115200);
 
-    pinMode(HALL, INPUT);
-    attachInterrupt(HALL, hallISR, FALLING);
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
 
-    pinMode(LOAD_SCK, OUTPUT);
-    pinMode(LOAD_DATA, INPUT);
-    digitalWrite(LOAD_SCK, LOW);
-    
-    digitalWrite(LED1, HIGH);
-    digitalWrite(LED2, HIGH);
-}
+  pinMode(RELAY, OUTPUT);
 
-void hallISR()
-{
-  static uint32_t b = 0;
-  digitalWriteFast(LED2, (b++ & 1));
-  
-  curTime = micros();
-  
-  int32_t dif = curTime - lastTime;
-  
-  avgTime += (dif - avgTime) / 8;
-  
-  lastTime = curTime;
-}
+  digitalWrite(LED1, HIGH);
+  digitalWrite(LED2, HIGH);
 
-float LoadRead()
-{
-  if(digitalRead(LOAD_DATA))
-    return 0;//not ready
+  digitalWrite(RELAY, HIGH);
 
-  int32_t resp = 0;
-  for(uint8_t i = 0; i < 24; i++)
-  {
-    resp = resp << 1;
-    digitalWrite(LOAD_SCK, HIGH);
-    delayMicroseconds(1);
-    resp |= digitalRead(LOAD_DATA);
-    digitalWrite(LOAD_SCK, LOW);
-    delayMicroseconds(1);
-  }
+  pinMode(HALL, INPUT_PULLUP);
 
-  digitalWrite(LOAD_SCK, HIGH);
-  delayMicroseconds(1);
-  digitalWrite(LOAD_SCK, LOW);
-  delayMicroseconds(1);
+  attachInterrupt(HALL, countHallPulse, FALLING);
 
-  resp = resp << 8;
-  
-  avgLoad += (resp - avgLoad) / 10;
-
-  float load = ((float)avgLoad - LOAD_ZERO) / LOAD_SCALE;
-  //float load = avgLoad;
-  //float load = (float)avgLoad - LOAD_ZERO;
-  
-  return load;//change to 2's complement
 }
 
 void loop() {
-  float voltage = INAvoltage();
-  float current = INAcurrent();
-  float power = voltage * current;
-  float omega = 2.0 * 3.1415 / (avgTime * 8) * 1000000;
-  float torque = LoadRead();
 
-  Serial.print(omega);
-  Serial.print(" ");
-  Serial.print(torque);
-  Serial.print(" ");
-  Serial.print(omega * torque);
-  Serial.print(" ");
-  Serial.println(power);
+  double InaVoltage = INAvoltage();
+  double InaCurrent = INAcurrent();
+  double InaPower = InaVoltage * InaCurrent;
   
-  while(digitalRead(LOAD_DATA))
-    ;
+  double currentRPM = 1000000.0 / avgdT * 60; 
+  if(micros() - lastHallPulse > 2000000)
+    currentRPM = 0;
+  
+  // 2.74889357 is the circumfence of the wheels.
+  //distance = distTicks * TICK_DIST;
 
-  delay(20);
+  Serial.print(InaVoltage);
+  Serial.print(" ");
+  Serial.print(InaCurrent);
+  Serial.print(" ");
+  Serial.print(InaPower);
+  Serial.print(" ");
+  Serial.print(currentRPM);
+  Serial.println();
+
+  delay(100);
 }
 
-float INAcurrent()
+double INAcurrent()
 {
   int16_t raw = INAreadReg(0x01); //deliberate bad cast! the register is stored as two's complement
   return raw * 0.0000025 / 0.001 ; //2.5uV lsb and 1mOhm resistor
 }
 
-float INAvoltage()
+double INAvoltage()
 {
   uint16_t raw = INAreadReg(0x02);
-  return raw * 0.00125; //multiply by 1.25mV LSB 
+  return raw * 0.00125; //multiply by 1.25mV LSB
 }
 
 void INAinit()
@@ -133,7 +92,7 @@ uint16_t INAreadReg(uint8_t reg)
   Wire.requestFrom(0x40, 2);
 
   delayMicroseconds(100);
-  if(Wire.available() < 2)
+  if (Wire.available() < 2)
     return 0;
 
   uint16_t resp = (uint16_t)Wire.read() << 8;
@@ -142,4 +101,17 @@ uint16_t INAreadReg(uint8_t reg)
   return resp;
 }
 
+void countHallPulse() {
+  uint32_t current = micros();
 
+  tickTimes[tickPos++] = current;
+  tickPos %= WHEEL_TICKS;
+
+  avgdT = current - tickTimes[tickPos];
+
+  distTicks++;
+  
+  lastHallPulse = current;
+
+  digitalWrite(LED1, (distTicks) & 1);
+}
