@@ -6,14 +6,22 @@
 #define RELAY 2
 #define HALL 23
 #define WHEEL_TICKS 54
+
 volatile uint32_t tickTimes[WHEEL_TICKS];
 volatile uint32_t tickPos;
 
+volatile uint32_t loopTicker = 0;
 volatile uint32_t lastHallPulse = 0;
-volatile uint32_t lastInaMeasurement = 0;
-volatile uint32_t countIntervals = 0;
 volatile int32_t avgdT = 1000000;
 volatile uint32_t distTicks = 0;
+
+uint32_t testBeginTime = 0;
+uint32_t testActive = 0;
+
+float InaVoltage = 0;
+float InaCurrent = 0;
+float InaPower = 0;
+float currentRPM = 0;
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -33,23 +41,53 @@ void setup() {
 
   pinMode(HALL, INPUT_PULLUP);
 
+  analogWriteResolution(12);
+
   attachInterrupt(HALL, countHallPulse, FALLING);
 
 }
 
 void loop() {
 
-  double InaVoltage = INAvoltage();
-  double InaCurrent = INAcurrent();
-  double InaPower = InaVoltage * InaCurrent;
-  
-  double currentRPM = 1000000.0 / avgdT * 60; 
+  //Main loop delay-----------------------------------------
+  uint32_t currentMillis = millis();
+  if(currentMillis - loopTicker < 100)
+    return;
+
+  loopTicker = currentMillis;
+
+  //Read sensors--------------------------------------------
+  InaVoltage = INAvoltage();
+  InaCurrent = INAcurrent();
+  InaPower = InaVoltage * InaCurrent;
+  currentRPM = 1000000.0 / avgdT * 60; 
   if(micros() - lastHallPulse > 2000000)
     currentRPM = 0;
-  
-  // 2.74889357 is the circumfence of the wheels.
-  //distance = distTicks * TICK_DIST;
 
+  //Read serial port----------------------------------------
+  while(Serial.available())
+  {
+    uint8_t c = Serial.read();
+
+    if(c == 'b')
+    {
+      testBeginTime = currentMillis;
+      testActive = 1;
+      initTest();
+    }
+  }
+
+  //Begin state machine------------------------------------
+
+  if(currentMillis - testBeginTime > 10000)
+    testActive = 0;
+    
+  if(testActive)
+    runTest(currentMillis - testBeginTime);
+  else
+    writeThrottle(0);
+  
+  //Print---------------------------------------------------
   Serial.print(InaVoltage);
   Serial.print(" ");
   Serial.print(InaCurrent);
@@ -57,9 +95,50 @@ void loop() {
   Serial.print(InaPower);
   Serial.print(" ");
   Serial.print(currentRPM);
+  Serial.print(" ");
+  Serial.print(currentMillis);
   Serial.println();
+}
 
-  delay(100);
+float targetCurrent = 0;
+float integralTerm = 0;
+
+void initTest()
+{
+  targetCurrent = 6;
+  integralTerm = 0;
+}
+
+void runTest(uint32_t msElapsed)
+{
+  //Fault conditions
+  if(    (msElapsed > 3000 && InaCurrent < 0.1) //no current after a long time
+      || (InaCurrent > 20.0) //overcurrent
+      || (InaVoltage < 12.0) //undervoltage
+      || (currentRPM > 600)) //overspeed
+  {
+    testActive = 0;
+    writeThrottle(0);
+    return;
+  }
+
+  float errorCurrent = targetCurrent - InaCurrent;
+
+  integralTerm += errorCurrent;
+  
+  float targetThrottle = integralTerm * 0.002 + errorCurrent * 0.04;
+  Serial.println(integralTerm * 0.002);
+  Serial.println(errorCurrent * 0.01);
+  writeThrottle(targetThrottle);
+}
+
+void writeThrottle(float pct)
+{
+  pct = constrain(pct, 0.0, 1.0);
+  uint16_t dacVal = pct * 4095.0;
+  analogWrite(A14, dacVal);
+
+  digitalWrite(LED2, dacVal > 0);
 }
 
 double INAcurrent()
@@ -102,16 +181,16 @@ uint16_t INAreadReg(uint8_t reg)
 }
 
 void countHallPulse() {
-  uint32_t current = micros();
+  uint32_t currentMicros = micros();
 
-  tickTimes[tickPos++] = current;
+  tickTimes[tickPos++] = currentMicros;
   tickPos %= WHEEL_TICKS;
 
-  avgdT = current - tickTimes[tickPos];
+  avgdT = currentMicros - tickTimes[tickPos];
 
   distTicks++;
   
-  lastHallPulse = current;
+  lastHallPulse = currentMicros;
 
   digitalWrite(LED1, (distTicks) & 1);
 }
