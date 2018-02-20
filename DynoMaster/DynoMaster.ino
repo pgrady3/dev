@@ -51,7 +51,7 @@ void loop() {
 
   //Main loop delay-----------------------------------------
   uint32_t currentMillis = millis();
-  if(currentMillis - loopTicker < 100)
+  if(currentMillis - loopTicker < 20)
     return;
 
   loopTicker = currentMillis;
@@ -105,7 +105,7 @@ float integralTerm = 0;
 
 void initTest()
 {
-  targetCurrent = 6;
+  targetCurrent = 3;
   integralTerm = 0;
 }
 
@@ -127,8 +127,9 @@ void runTest(uint32_t msElapsed)
   integralTerm += errorCurrent;
   
   float targetThrottle = integralTerm * 0.002 + errorCurrent * 0.04;
-  Serial.println(integralTerm * 0.002);
-  Serial.println(errorCurrent * 0.01);
+
+  targetThrottle = 0.5;
+    
   writeThrottle(targetThrottle);
 }
 

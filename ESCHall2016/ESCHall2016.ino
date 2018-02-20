@@ -1,9 +1,17 @@
+//uint8_t hallOrder[] = {255, 0, 4, 5, 2, 1, 3, 255};
+//#define HALL_SHIFT 1
+
+//KOFORD
+uint8_t hallOrder[] = {255, 2, 4, 3, 0, 1, 5, 255};
+#define HALL_SHIFT 4
+#define SWITCH_FREQ 32000
+
+
+//-------------------------------------------------------------------
+
 #include "TimerOne.h"
 #include "SPI.h"
 #include "config.h"
-
-uint8_t hallOrder[] = {255, 0, 4, 5, 2, 1, 3, 255};
-#define HALL_SHIFT 1
 
 uint32_t lastTime = 0;
 
@@ -70,8 +78,15 @@ void writeLow(uint8_t phase){
 void writeState(uint8_t pos)
 {
   //Maybe this is necessary? Might solve some problems with bad handshaking?
-  writeHigh(0);
-  writeLow(0);
+  //writeHigh(0);
+  //writeLow(0);
+
+  if(throttle == 0)
+  {
+    writeHigh(0b000);
+    writeLow(0b000);
+    return;
+  }
 
   switch(pos){
     case 0://LOW A, HIGH B
