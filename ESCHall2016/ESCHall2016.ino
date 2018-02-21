@@ -40,20 +40,30 @@ void hallISR()
   }
 
   pos = (pos + HALL_SHIFT) % 6;
+
+  analogWrite(A14, pos * 500 + 500);
   writeState(pos);
 }
+
+float avgThrottle = 0;
 
 void loop(){
 
   uint32_t curTime = millis();
-  if(curTime - lastTime > 50)
+  float curThrottle = getThrottle();
+  
+  avgThrottle += (curThrottle - avgThrottle) / 100;
+  if(curThrottle + 0.1 < avgThrottle)
+    avgThrottle = curThrottle;
+
+  
+  if(curTime - lastTime > 10)
   {
-    throttle = getThrottle() * 4095;
+    //throttle = getThrottle() * 4095;
+    throttle = avgThrottle * 4095;
     hallISR();
     
     lastTime = curTime;
-    //Serial.println(throttle);
-    Serial.println(analogRead(15));
   }
   
   delay(1);

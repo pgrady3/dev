@@ -22,6 +22,8 @@ float InaVoltage = 0;
 float InaCurrent = 0;
 float InaPower = 0;
 float currentRPM = 0;
+float targetThrottle = 0;
+
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -96,6 +98,8 @@ void loop() {
   Serial.print(" ");
   Serial.print(currentRPM);
   Serial.print(" ");
+  Serial.print(targetThrottle);
+  Serial.print(" ");
   Serial.print(currentMillis);
   Serial.println();
 }
@@ -105,7 +109,7 @@ float integralTerm = 0;
 
 void initTest()
 {
-  targetCurrent = 3;
+  targetCurrent = 5;
   integralTerm = 0;
 }
 
@@ -114,22 +118,23 @@ void runTest(uint32_t msElapsed)
   //Fault conditions
   if(    (msElapsed > 3000 && InaCurrent < 0.1) //no current after a long time
       || (InaCurrent > 20.0) //overcurrent
-      || (InaVoltage < 12.0) //undervoltage
-      || (currentRPM > 600)) //overspeed
+      || (InaVoltage < 12.0)) //undervoltage
   {
     testActive = 0;
     writeThrottle(0);
     return;
   }
 
-  float errorCurrent = targetCurrent - InaCurrent;
+  /*float errorCurrent = targetCurrent - InaCurrent;
 
-  integralTerm += errorCurrent;
+  integralTerm += errorCurrent * 0.02; //20 ms
   
-  float targetThrottle = integralTerm * 0.002 + errorCurrent * 0.04;
+  float targetThrottle = integralTerm * 0.05 + errorCurrent * 0.01;*/
 
-  targetThrottle = 0.5;
-    
+  
+  targetThrottle = 0.47 + currentRPM * 0.0007;
+
+  //Serial.println(targetThrottle);
   writeThrottle(targetThrottle);
 }
 
@@ -158,8 +163,8 @@ void INAinit()
 {
   Wire.beginTransmission(0x40);
   Wire.write(0x00);//reg select = 0x00
-  Wire.write(0b0111);//64 averages, 1ms voltage sampling
-  Wire.write(0b100111);//1ms current sampling, free running
+  Wire.write(0b00001010);//64 averages, 1ms voltage sampling
+  Wire.write(0b00000111);//1ms current sampling, free running
   Wire.endTransmission();
 }
 
