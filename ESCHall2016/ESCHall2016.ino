@@ -14,7 +14,9 @@ uint8_t hallOrder[] = {255, 2, 4, 3, 0, 1, 5, 255};
 #include "SPI.h"
 #include "config.h"
 
-uint32_t lastTime = 0;
+volatile uint32_t lastTime = 0;
+volatile uint32_t lastHallTime = 0;
+volatile uint32_t curTime = 0;
 
 volatile uint16_t throttle = 0;
 
@@ -41,16 +43,17 @@ void hallISR()
   }
 
   pos = (pos + HALL_SHIFT) % 6;
-
-  analogWrite(A14, pos * 500 + 500);
+  //analogWrite(A14, pos * 500 + 500);
   writeState(pos);
+  
+  lastHallTime = curTime;
 }
 
 float avgThrottle = 0;
 
 void loop(){
 
-  uint32_t curTime = millis();
+  curTime = millis();
   float curThrottle = getThrottle();
   
   avgThrottle += (curThrottle - avgThrottle) / 100;
@@ -59,9 +62,11 @@ void loop(){
   {
     throttle = avgThrottle * 4095;
     lastTime = curTime;
+
+    if(curTime - lastHallTime > 50)
+      hallISR();//calling this randomly somehow causes current spikes to the motor. only call it when needed
   }
 
-  //hallISR();
   delay(1);
 }
 
