@@ -5,4 +5,5 @@ data = importdata('data.txt');
 voltage = data(:, 1);
 current = data(:, 2);
 rpm = data(:, 4);
-time = data(:, 5) ./ 1000;
+throttle = data(:, 5);
+time = data(:, 6) ./ 1000;

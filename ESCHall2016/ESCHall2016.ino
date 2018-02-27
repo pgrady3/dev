@@ -5,6 +5,7 @@
 uint8_t hallOrder[] = {255, 2, 4, 3, 0, 1, 5, 255};
 #define HALL_SHIFT 4
 #define SWITCH_FREQ 32000
+#define HALL_SAMPLES 10
 
 
 //-------------------------------------------------------------------
@@ -53,27 +54,38 @@ void loop(){
   float curThrottle = getThrottle();
   
   avgThrottle += (curThrottle - avgThrottle) / 100;
-  if(curThrottle + 0.1 < avgThrottle)
-    avgThrottle = curThrottle;
-
   
   if(curTime - lastTime > 10)
   {
-    //throttle = getThrottle() * 4095;
     throttle = avgThrottle * 4095;
-    hallISR();
-    
     lastTime = curTime;
   }
-  
+
+  //hallISR();
   delay(1);
 }
 
 uint8_t getHalls()
 {
-  uint8_t hall = (digitalReadFast(HALL3) << 2) | (digitalReadFast(HALL2) << 1) | (digitalReadFast(HALL1) << 0);
-  return hall & 0x07;
+  uint32_t hallCounts[] = {0, 0, 0};
+  for(uint32_t i = 0; i < HALL_SAMPLES; i++)
+  {
+    hallCounts[0] += digitalReadFast(HALL1);
+    hallCounts[1] += digitalReadFast(HALL2);
+    hallCounts[2] += digitalReadFast(HALL3);
+  }
+
+  uint8_t hall = 0;
+  if(hallCounts[0] > (HALL_SAMPLES/2))  hall |= 1<<0;
+  if(hallCounts[1] > (HALL_SAMPLES/2))  hall |= 1<<1;
+  if(hallCounts[2] > (HALL_SAMPLES/2))  hall |= 1<<2;
+
+  return hall;
+  
+  //uint8_t hall = (digitalReadFast(HALL3) << 2) | (digitalReadFast(HALL2) << 1) | (digitalReadFast(HALL1) << 0);
+  //return hall & 0x07;
 }
+
 
 // write the phase to the low side gates
 // 1-hot encoding for the phase
