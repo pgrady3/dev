@@ -81,7 +81,7 @@ void loop() {
 
   //Begin state machine------------------------------------
 
-  if(currentMillis - testBeginTime > 10000)
+  if(currentMillis - testBeginTime > 60000)
     testActive = 0;
     
   if(testActive)
@@ -118,7 +118,8 @@ void runTest(uint32_t msElapsed)
   //Fault conditions
   if(    (msElapsed > 3000 && InaCurrent < 0.1) //no current after a long time
       || (InaCurrent > 20.0) //overcurrent
-      || (InaVoltage < 12.0)) //undervoltage
+      || (InaVoltage < 12.0) //undervoltage
+      || (currentRPM > 800))
   {
     testActive = 0;
     writeThrottle(0);
@@ -132,7 +133,7 @@ void runTest(uint32_t msElapsed)
   float targetThrottle = integralTerm * 0.05 + errorCurrent * 0.01;*/
 
   
-  targetThrottle = 0.47 + currentRPM * 0.0007;
+  targetThrottle = 0.47 + currentRPM * 0.00065;
 
   //Serial.println(targetThrottle);
   writeThrottle(targetThrottle);
