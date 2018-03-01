@@ -133,7 +133,8 @@ void runTest(uint32_t msElapsed)
   float targetThrottle = integralTerm * 0.05 + errorCurrent * 0.01;*/
 
   
-  targetThrottle = 0.47 + currentRPM * 0.00065;
+  //targetThrottle = 0.47 + currentRPM * 0.00065;//5A at 20v
+  targetThrottle = 0.51 + currentRPM * 0.00068;//10A at 20v
 
   //Serial.println(targetThrottle);
   writeThrottle(targetThrottle);
