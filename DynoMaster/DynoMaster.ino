@@ -23,7 +23,8 @@ float InaCurrent = 0;
 float InaPower = 0;
 float currentRPM = 0;
 float targetThrottle = 0;
-
+float targetCurrent = 4;
+float integralTerm = 0;
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -86,7 +87,7 @@ void loop() {
 
   //Begin state machine------------------------------------
 
-  if(currentMillis - testBeginTime > 60000)
+  if(currentMillis - testBeginTime > 90000)
     testActive = 0;
     
   if(testActive)
@@ -103,14 +104,11 @@ void loop() {
   Serial.print(" ");
   Serial.print(currentRPM);
   Serial.print(" ");
-  Serial.print(targetThrottle);
+  Serial.print(targetCurrent);
   Serial.print(" ");
   Serial.print(currentMillis);
   Serial.println();
 }
-
-float targetCurrent = 4;
-float integralTerm = 0;
 
 void initTest()
 {
@@ -141,7 +139,7 @@ void runTest(uint32_t msElapsed)
   
   //targetThrottle = 0.51 + currentRPM * 0.00068;//10A at 20v
 
-  Serial.println(integralTerm);
+  //Serial.println(integralTerm);
   writeThrottle(targetThrottle);
 }
 
