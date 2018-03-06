@@ -1,9 +1,10 @@
 clear; clc; close all;
 
-ACCEL_WINDOW = 54;
+ACCEL_WINDOW = 10;
 ROT_INERTIA = 0.8489;
 
-PARASITIC_LOSSES = [0.0000   -0.0021   -0.0409];
+PARASITIC_LOSSES = [-0.000000174009895   0.000029033561439  -0.003222070361203  -0.030973207638652];%just air + bearing
+%PARASITIC_LOSSES = [-0.000000132005837   0.000026535670679  -0.004129207335037  -0.063561570528803];%air + bearing + chain + hysterisis
 
 data = importdata('20V100W_wspindown.txt');
 
@@ -32,11 +33,14 @@ for i = 1:length(velo) - ACCEL_WINDOW
     accel(i) = (velo(i2) - velo(i)) / (time(i2) - time(i));
 end
 
+accel = smooth(accel, 21);
+
 accelComp = accel - polyval(PARASITIC_LOSSES, velo);
 
 
 torque = ROT_INERTIA .* accelComp;
 mPower = torque .* velo;
+eff = mPower ./ ePower;
 
 figure(1);
 
@@ -45,5 +49,5 @@ hold on;
 plot(mPower);
 
 figure(2);
-plot(rpm, mPower ./ ePower);
+plot(ePower, eff);
 ylim([0, 1]);

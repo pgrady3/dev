@@ -46,7 +46,6 @@ void setup() {
   analogWriteResolution(12);
 
   attachInterrupt(HALL, countHallPulse, FALLING);
-
 }
 
 void loop() {
@@ -77,6 +76,12 @@ void loop() {
       testActive = 1;
       initTest();
     }
+    
+    if(c == 's')
+      testActive = 0;
+
+    if(c >= 'A' && c <='Z')//the jankiest shit ever. use letters as current targets
+      targetCurrent = c - 'A' + 1;
   }
 
   //Begin state machine------------------------------------
@@ -104,12 +109,11 @@ void loop() {
   Serial.println();
 }
 
-float targetCurrent = 0;
+float targetCurrent = 4;
 float integralTerm = 0;
 
 void initTest()
 {
-  targetCurrent = 5;
   integralTerm = 0;
 }
 
@@ -119,24 +123,25 @@ void runTest(uint32_t msElapsed)
   if(    (msElapsed > 3000 && InaCurrent < 0.1) //no current after a long time
       || (InaCurrent > 20.0) //overcurrent
       || (InaVoltage < 12.0) //undervoltage
-      || (currentRPM > 800))
+      || (currentRPM > 1000))
   {
     testActive = 0;
     writeThrottle(0);
     return;
   }
 
-  /*float errorCurrent = targetCurrent - InaCurrent;
-
-  integralTerm += errorCurrent * 0.02; //20 ms
+  float errorCurrent = targetCurrent - InaCurrent;
+  integralTerm += errorCurrent * 0.0003;
   
-  float targetThrottle = integralTerm * 0.05 + errorCurrent * 0.01;*/
+  if(currentRPM < 100)    integralTerm = 0;
 
+  float targetThrottle = 0.47 + currentRPM * 0.00065;//5A at 20v
+
+  targetThrottle += integralTerm;
   
-  //targetThrottle = 0.47 + currentRPM * 0.00065;//5A at 20v
-  targetThrottle = 0.51 + currentRPM * 0.00068;//10A at 20v
+  //targetThrottle = 0.51 + currentRPM * 0.00068;//10A at 20v
 
-  //Serial.println(targetThrottle);
+  Serial.println(integralTerm);
   writeThrottle(targetThrottle);
 }
 
