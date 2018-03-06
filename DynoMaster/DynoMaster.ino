@@ -107,6 +107,8 @@ void loop() {
   Serial.print(targetCurrent);
   Serial.print(" ");
   Serial.print(currentMillis);
+  Serial.print(" ");
+  Serial.print(targetThrottle);
   Serial.println();
 }
 
@@ -123,7 +125,7 @@ void runTest(uint32_t msElapsed)
   if(currentRPM < 100)    integralTerm = 0;
 
   //float targetThrottle = 0.47 + currentRPM * 0.00065;//5A at 20v
-  float targetThrottle = 0.47 + integralTerm;//5A at 20v
+  targetThrottle = 0.47 + integralTerm;//5A at 20v
   
   //targetThrottle = 0.51 + currentRPM * 0.00068;//10A at 20v
 
