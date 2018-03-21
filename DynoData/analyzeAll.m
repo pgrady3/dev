@@ -1,12 +1,11 @@
 clear; clc; close all;
 
-ACCEL_WINDOW = 10;
+ACCEL_WINDOW = 50;
 ROT_INERTIA = 0.8489;
 
 PARASITIC_LOSSES = [-0.000000174009895   0.000029033561439  -0.003222070361203  -0.030973207638652];%just air + bearing
 %PARASITIC_LOSSES = [-0.000000132005837   0.000026535670679  -0.004129207335037  -0.063561570528803];%air + bearing + chain + hysterisis
 
-filesStruct = dir('30V/*.txt');
 
 for i = 1:numel(filesStruct)
     filename = filesStruct(i).name;
@@ -25,13 +24,14 @@ for i = 1:numel(filesStruct)
     end
 
     rpm = smooth(rpm, 21);
+    rpmMotor = rpm .* 60 ./ 14;
 
     velo = rpm * 2 * pi / 60;
     throttle = data(:, 5);
     time = data(:, 6) ./ 1000;
 
     ePower = voltage .* current;
-    ePower = smooth(ePower, 41);
+    ePower = smooth(ePower, 81);
 
     accel = zeros(size(velo));
 
@@ -48,13 +48,28 @@ for i = 1:numel(filesStruct)
     mPower = torque .* velo;
     eff = mPower ./ ePower;
     
-    eff = smooth(eff, 21);
-    
     figure(1);
-    plot(rpm, eff, '.', 'DisplayName', filename); hold on;
+    plot(rpmMotor, eff, '.', 'DisplayName', filename); hold on;
+    
+    figure(2);
+    scatter3(rpmMotor, mPower, eff, '.', 'DisplayName', filename); hold on;
+    
+    figure(3);
+    plot(rpmMotor, current, '.', 'DisplayName', filename); hold on;
 end
 
 figure(1);
 legend(gca,'show');
 grid on;
 ylim([0.6, 1]);
+
+figure(2);
+legend(gca,'show');
+grid on;
+zlim([0.84, 0.9]);
+%ylim([0, 5]);
+%xlim([0, 1200]);
+
+figure(3);
+legend(gca,'show');
+grid on;
