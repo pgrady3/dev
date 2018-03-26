@@ -2,8 +2,9 @@
 #include "SPI.h"
 #include "config.h"
 
-uint8_t hallOrder[] = {255, 3, 1, 2, 5, 4, 0, 255};
-#define HALL_SHIFT 3
+uint8_t hallOrder[] = {255, 5, 3, 4, 1, 0, 2, 255};
+#define HALL_SHIFT 1
+#define HALL_SAMPLES 10
 
 uint32_t lastTime = 0;
 
@@ -33,13 +34,11 @@ void hallISR()
 
   pos = (pos + HALL_SHIFT) % 6;
   writeState(pos);
-
-  digitalWrite(LED1, !digitalRead(LED1));
-  Serial.println(pos);
 }
 
 void loop(){
 
+  digitalWrite(LED2, HIGH);
   uint32_t curTime = millis();
   if(curTime - lastTime > 50)
   {
@@ -47,16 +46,35 @@ void loop(){
     hallISR();
     
     lastTime = curTime;
-    //Serial.println(throttle);
-    //Serial.println(analogRead(15));
+    Serial.print(throttle);
+    Serial.print(' ');
+    Serial.println(getHalls());
+    
   }
-  
+  digitalWrite(LED2, LOW);
   delay(1);
 }
 
 uint8_t getHalls()
 {
-  uint8_t hall = (digitalReadFast(HALL3) << 2) | (digitalReadFast(HALL2) << 1) | (digitalReadFast(HALL1) << 0);
+  uint32_t hallCounts[] = {0, 0, 0};
+  for(uint32_t i = 0; i < HALL_SAMPLES; i++)
+  {
+    hallCounts[0] += digitalReadFast(HALL1);
+    hallCounts[1] += digitalReadFast(HALL2);
+    hallCounts[2] += digitalReadFast(HALL3);
+  }
+
+  uint8_t hall = 0;
+  if(hallCounts[0] > (HALL_SAMPLES/2))  hall |= 1<<0;
+  if(hallCounts[1] > (HALL_SAMPLES/2))  hall |= 1<<1;
+  if(hallCounts[2] > (HALL_SAMPLES/2))  hall |= 1<<2;
+  
+  if(hall == 7)
+    digitalWrite(LED1, HIGH);
+  else
+    digitalWrite(LED1, LOW);
+  
   return hall & 0x07;
 }
 

@@ -1,13 +1,13 @@
 //For 2017 ESC
-/*#define HALL1 1
+#define HALL1 1
 #define HALL2 2
-#define HALL3 3*/
+#define HALL3 3
 
 
 //For 2016 ESC
-#define HALL1 16
+/*#define HALL1 16
 #define HALL2 17
-#define HALL3 20
+#define HALL3 20*/
 
 void setup() {
   Serial.begin(9600);
