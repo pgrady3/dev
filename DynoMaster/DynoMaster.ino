@@ -14,6 +14,7 @@ volatile uint32_t loopTicker = 0;
 volatile uint32_t lastHallPulse = 0;
 volatile int32_t avgdT = 1000000;
 volatile uint32_t distTicks = 0;
+volatile uint32_t lastInaMeasurement = 0;
 
 uint32_t testBeginTime = 0;
 uint32_t testActive = 0;
@@ -25,6 +26,8 @@ float currentRPM = 0;
 float targetThrottle = 0;
 float targetCurrent = 4;
 float integralTerm = 0;
+double energyUsed = 0.0;
+
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -66,6 +69,10 @@ void loop() {
   if(micros() - lastHallPulse > 2000000)
     currentRPM = 0;
 
+  double currentInaTime = millis();
+  energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
+  lastInaMeasurement = currentInaTime;
+
   //Read serial port----------------------------------------
   while(Serial.available())
   {
@@ -96,6 +103,9 @@ void loop() {
     writeThrottle(0);
   
   //Print---------------------------------------------------
+  float velo = currentRPM / 9.5492;//to rad/sec
+  float flywheelEnergy = 0.5 * velo * velo * 0.8489;
+  
   Serial.print(InaVoltage);
   Serial.print(" ");
   Serial.print(InaCurrent);
@@ -109,6 +119,10 @@ void loop() {
   Serial.print(currentMillis);
   Serial.print(" ");
   Serial.print(targetThrottle);
+  Serial.print(" ");
+  Serial.print(flywheelEnergy);
+  Serial.print(" ");
+  Serial.print(energyUsed);
   Serial.println();
 }
 
