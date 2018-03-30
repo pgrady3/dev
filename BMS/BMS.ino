@@ -1,5 +1,6 @@
 #include <i2c_t3.h>
 #include <SD.h>
+#include "INA.h"
 
 #define LED1 3
 #define LED2 21
@@ -12,6 +13,8 @@
 #define RELAY 2
 #define HALL 23
 #define SD_CS 8
+
+#define H2_I2C_ADDR 0x60
 
 #define NUMBER_OF_CELLS 16
 #define CELL_MIN 2.7
@@ -48,7 +51,7 @@ void setup() {
   INAinit();
 
   Serial.begin(115200);
-  Serial2.begin(9600);
+  Serial2.begin(38400);
   SD.begin(SD_CS);
 
   pinMode(LED1, OUTPUT);
@@ -88,7 +91,6 @@ double readCell(uint8_t cell)
 }
 
 void loop() {
-
   InaVoltage = INAvoltage();
   InaCurrent = INAcurrent();
   InaPower = InaVoltage * InaCurrent;
@@ -101,72 +103,12 @@ void loop() {
   if(micros() - lastHallPulse > 2000000)
     currentSpeed = 0;
   
-  //currentSpeed = avgdT;
-  
-  /*double average = 0.0;
-  
-  for (uint8_t i = 0; i < NUMBER_OF_CELLS; i++)
-  {
-    double result = readCell(i);
-    average += result;
-    cellVolts[i] = result;
-    if ((result < CELL_MIN) || (result > CELL_MAX)) {
-      batteryOK = false;
-    }
-  }
-  batteryVoltage = average / NUMBER_OF_CELLS;
-  //TODO: measure temperature here.
-  if (temperature > MAX_TEMPERATURE) {
-    batteryOK = false;
-  }*/
-
-  // 2.74889357 is the circumfence of the wheels.
   distance = distTicks * TICK_DIST;
   
-
-  
+  //readH2();
   writeToBtSd();
 
   delay(100);
-}
-
-double INAcurrent()
-{
-  int16_t raw = INAreadReg(0x01); //deliberate bad cast! the register is stored as two's complement
-  return raw * 0.0000025 / 0.001 ; //2.5uV lsb and 1mOhm resistor
-}
-
-double INAvoltage()
-{
-  uint16_t raw = INAreadReg(0x02);
-  return raw * 0.00125; //multiply by 1.25mV LSB
-}
-
-void INAinit()
-{
-  Wire.beginTransmission(0x40);
-  Wire.write(0x00);//reg select = 0x00
-  Wire.write(0b0111);//64 averages, 1ms voltage sampling
-  Wire.write(0b100111);//1ms current sampling, free running
-  Wire.endTransmission();
-}
-
-uint16_t INAreadReg(uint8_t reg)
-{
-  Wire.beginTransmission(0x40);
-  Wire.write(reg);//read from the bus voltage
-  Wire.endTransmission();
-
-  Wire.requestFrom(0x40, 2);
-
-  delayMicroseconds(100);
-  if (Wire.available() < 2)
-    return 0;
-
-  uint16_t resp = (uint16_t)Wire.read() << 8;
-  resp |= Wire.read();
-
-  return resp;
 }
 
 void countHallPulse() {

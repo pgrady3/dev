@@ -2,8 +2,12 @@
 #include "SPI.h"
 #include "config.h"
 
-uint8_t hallOrder[] = {255, 5, 3, 4, 1, 0, 2, 255};
-#define HALL_SHIFT 1
+/*
+uint8_t hallOrder[] = {255, 5, 3, 4, 1, 0, 2, 255}; //for gemini hub motor
+#define HALL_SHIFT 1*/
+
+uint8_t hallOrder[] = {255, 1, 3, 2, 5, 0, 4, 255}; //for maxwell motor
+#define HALL_SHIFT 2
 #define HALL_SAMPLES 10
 
 uint32_t lastTime = 0;
@@ -91,8 +95,8 @@ void writeLow(uint8_t phase){
 void writeState(uint8_t pos)
 {
   //Maybe this is necessary? Might solve some problems with bad handshaking?
-  writeHigh(0);
-  writeLow(0);
+  //writeHigh(0);
+  //writeLow(0);
 
   switch(pos){
     case 0://LOW A, HIGH B

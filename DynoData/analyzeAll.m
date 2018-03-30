@@ -6,7 +6,7 @@ ROT_INERTIA = 0.8489;
 PARASITIC_LOSSES = [-0.000000174009895   0.000029033561439  -0.003222070361203  -0.030973207638652];%just air + bearing
 %PARASITIC_LOSSES = [-0.000000132005837   0.000026535670679  -0.004129207335037  -0.063561570528803];%air + bearing + chain + hysterisis
 
-filesStruct = dir('25V/*.txt');
+filesStruct = dir('20V/*.txt');
 
 for i = 1:numel(filesStruct)
     filename = filesStruct(i).name;
