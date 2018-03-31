@@ -1,5 +1,6 @@
 #include <i2c_t3.h>
 #include <SD.h>
+#include "Adafruit_GPS.h"
 #include "INA.h"
 
 #define LED1 3
@@ -45,6 +46,7 @@ double batteryVoltage = 0.0;
 bool batteryOK = true;
 
 File myFile;
+Adafruit_GPS GPS(&Serial1);
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -74,6 +76,11 @@ void setup() {
   attachInterrupt(HALL, countHallPulse, FALLING);
 
   myFile = SD.open("data.txt", FILE_WRITE);
+
+  GPS.begin(9600);
+  
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
 }
 
 double readCell(uint8_t cell)
@@ -106,6 +113,29 @@ void loop() {
   distance = distTicks * TICK_DIST;
   
   //readH2();
+
+  while(GPS.read())
+  {
+    ;
+  }
+
+  if (GPS.newNMEAreceived())
+  {
+    GPS.parse(GPS.lastNMEA());
+  }
+
+
+
+  /*Serial.print("Location: ");
+  Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+  Serial.print(", "); 
+  Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+  
+  Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+  Serial.print("Angle: "); Serial.println(GPS.angle);
+  Serial.print("Altitude: "); Serial.println(GPS.altitude);
+  Serial.print("Satellites: "); Serial.println((int)GPS.satellites);*/
+  
   writeToBtSd();
 
   delay(100);
@@ -129,7 +159,8 @@ void countHallPulse() {
 void writeToBtSd() {
   String outputStr = String(InaVoltage) + " " + String(InaCurrent) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
                      String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis());
+                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis()) + " " + GPS.latitude * 100 + GPS.lat + 
+                     " " + GPS.longitude * 100 + GPS.lon + " " + String(GPS.satellites);
   Serial.println(outputStr);
   Serial2.println(outputStr);
   
