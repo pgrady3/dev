@@ -2,6 +2,7 @@
 #include <SD.h>
 #include "Adafruit_GPS.h"
 #include "INA.h"
+#include "H2.h"
 
 #define LED1 3
 #define LED2 21
@@ -12,10 +13,11 @@
 #define S3 20
 
 #define RELAY 2
+#define SOLENOID 7
 #define HALL 23
 #define SD_CS 8
+#define H2_SENSOR 22
 
-#define H2_I2C_ADDR 0x60
 
 #define NUMBER_OF_CELLS 16
 #define CELL_MIN 2.7
@@ -44,12 +46,14 @@ double InaPower = 0;
 double batteryVoltage = 0.0;
 
 bool batteryOK = true;
+uint32_t h2Detected = 0;
 
 File myFile;
 Adafruit_GPS GPS(&Serial1);
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
+  Wire.setDefaultTimeout(1000);
   INAinit();
 
   Serial.begin(115200);
@@ -65,11 +69,12 @@ void setup() {
   pinMode(S3, OUTPUT);
 
   pinMode(RELAY, OUTPUT);
+  pinMode(SOLENOID, OUTPUT);
+  digitalWrite(RELAY, HIGH);
+  digitalWrite(SOLENOID, HIGH);
 
   digitalWrite(LED1, HIGH);
   digitalWrite(LED2, HIGH);
-
-  digitalWrite(RELAY, HIGH);
 
   pinMode(HALL, INPUT_PULLUP);
 
@@ -112,19 +117,29 @@ void loop() {
   
   distance = distTicks * TICK_DIST;
   
-  //readH2();
+  Serial.println(readH2(0x00));
+  Serial.println(readH2(0x10));
+  Serial.println(readH2(0x11));
+  Serial.println(readH2(0x12));
 
+  //writeH2(0x24, 6000);
+  
   while(GPS.read())
-  {
     ;
-  }
 
   if (GPS.newNMEAreceived())
-  {
     GPS.parse(GPS.lastNMEA());
+
+  if(analogRead(H2_SENSOR) < 200)
+    h2Detected++;
+
+  if(h2Detected > 5)
+  {
+    digitalWrite(RELAY, LOW);
+    digitalWrite(SOLENOID, LOW);
+    digitalWrite(LED1, !digitalRead(LED1));
+    digitalWrite(LED2, !digitalRead(LED2));
   }
-
-
 
   /*Serial.print("Location: ");
   Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
@@ -137,6 +152,8 @@ void loop() {
   Serial.print("Satellites: "); Serial.println((int)GPS.satellites);*/
   
   writeToBtSd();
+
+  //digitalWrite(SOLENOID, !digitalRead(SOLENOID));
 
   delay(100);
 }
