@@ -24,9 +24,9 @@
 #define CELL_MAX 4.2
 #define MAX_TEMPERATURE 50.0
 #define WHEEL_CIRC 1.492
-#define TICK_DIST (WHEEL_CIRC / 8)
+#define TICK_DIST (WHEEL_CIRC / 9)
 
-#define WHEEL_TICKS 8
+#define WHEEL_TICKS 9
 volatile uint32_t tickTimes[WHEEL_TICKS];
 volatile uint32_t tickPos;
 
