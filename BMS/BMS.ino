@@ -53,7 +53,7 @@ Adafruit_GPS GPS(&Serial1);
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
-  Wire.setDefaultTimeout(1000);
+  //Wire.setDefaultTimeout(1000);
   INAinit();
 
   Serial.begin(115200);
@@ -117,10 +117,10 @@ void loop() {
   
   distance = distTicks * TICK_DIST;
   
-  Serial.println(readH2(0x00));
+  /*Serial.println(readH2(0x00));
   Serial.println(readH2(0x10));
   Serial.println(readH2(0x11));
-  Serial.println(readH2(0x12));
+  Serial.println(readH2(0x12));*/
 
   //writeH2(0x24, 6000);
   
@@ -133,13 +133,13 @@ void loop() {
   if(analogRead(H2_SENSOR) < 200)
     h2Detected++;
 
-  if(h2Detected > 5)
+  /*if(h2Detected > 5)
   {
     digitalWrite(RELAY, LOW);
     digitalWrite(SOLENOID, LOW);
     digitalWrite(LED1, !digitalRead(LED1));
     digitalWrite(LED2, !digitalRead(LED2));
-  }
+  }*/
 
   /*Serial.print("Location: ");
   Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
