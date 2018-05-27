@@ -23,10 +23,11 @@
 #define CELL_MIN 2.7
 #define CELL_MAX 4.2
 #define MAX_TEMPERATURE 50.0
-#define WHEEL_CIRC 1.492
-#define TICK_DIST (WHEEL_CIRC / 9)
 
+#define WHEEL_CIRC 1.492
 #define WHEEL_TICKS 9
+#define TICK_DIST (WHEEL_CIRC / WHEEL_TICKS)
+
 volatile uint32_t tickTimes[WHEEL_TICKS];
 volatile uint32_t tickPos;
 
@@ -174,10 +175,10 @@ void countHallPulse() {
 }
 
 void writeToBtSd() {
-  String outputStr = String(InaVoltage) + " " + String(InaCurrent) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
+  String outputStr = String(InaVoltage, 3) + " " + String(InaCurrent, 3) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
                      String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis()) + " " + GPS.latitude * 100 + GPS.lat + 
-                     " " + GPS.longitude * 100 + GPS.lon + " " + String(GPS.satellites);
+                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis());// + " " + GPS.latitude * 100 + GPS.lat + 
+                     //" " + GPS.longitude * 100 + GPS.lon + " " + String(GPS.satellites);
   Serial.println(outputStr);
   Serial2.println(outputStr);
   

@@ -18,6 +18,7 @@
 #define DRV_CLK 13
 
 #define ISENSE1 17
+#define ISENSE2 16
 
 #define LED1 9
 #define LED2 8
@@ -77,6 +78,7 @@ void setupPins()
   SPI.setDataMode(SPI_MODE1);
   
   pinMode(ISENSE1, INPUT);
+  pinMode(ISENSE2, INPUT);
 
   // change the analog write frequency to 8 kHz
   analogWriteFrequency(INHA, 8000);
@@ -91,17 +93,28 @@ void setupPins()
   digitalWriteFast(DRV_EN_GATE, HIGH);
   delay(10);
 
-  while(SPIread(0x01) != 0x01)
+  /*while(SPIread(0x01) != 0x01)
   {
     Serial.println("DRV init fail");
+    SPIwrite(0x02, 0x03);
+    for(uint32_t i = 0; i < 4; i++)
+    {
+      Serial.println(SPIread(i));
+      Serial.println(SPIread(i));
+    }
+    
+    digitalWriteFast(DRV_EN_GATE, LOW);
+    delay(10);
+    digitalWriteFast(DRV_EN_GATE, HIGH);
     delay(500);
-  }
+  }*/
 
   //SPI.end();
 }
 
 uint16_t SPIread(uint8_t addr)
 {
+  delayMicroseconds(50);
   digitalWrite(DRV_CS, LOW);
 
   delayMicroseconds(50);

@@ -12,6 +12,11 @@ uint8_t hallOrder[] = {255, 1, 3, 2, 5, 0, 4, 255}; //for maxwell motor
 
 uint32_t lastTime = 0;
 
+#define LOG_SAMPLES 6000
+volatile uint32_t logI1[LOG_SAMPLES];
+volatile uint32_t logI2[LOG_SAMPLES];
+int32_t posI = -1;
+
 volatile uint16_t throttle = 0;
 
 void setup(){
@@ -41,22 +46,53 @@ void hallISR()
 }
 
 void loop(){
-
-  digitalWrite(LED2, HIGH);
+  digitalWrite(LED2, HIGH);  
+  
   uint32_t curTime = millis();
+
+  /*uint32_t i1 = analogRead(ISENSE1);
+  uint32_t i2 = analogRead(ISENSE2);
+  if(posI < 0 && i1 > 700)
+    posI = 0;
+
+  if(posI >= 0 && posI < LOG_SAMPLES)
+  {
+    logI1[posI] = i1;
+    logI2[posI++] = i2;
+  }
+
+  if(posI == LOG_SAMPLES)
+  {
+    posI++;
+    throttle = 0;
+    for(uint32_t i = 0; i < LOG_SAMPLES; i++)
+    {
+      Serial.print(logI1[i]);
+      Serial.print(' ');
+      Serial.println(logI2[i]);
+      delay(1);
+    }
+  }*/
+  
   if(curTime - lastTime > 50)
   {
     throttle = getThrottle() * 4095;
     hallISR();
+
+    //float i = (minI - 512.0) / 13.0;
     
     lastTime = curTime;
-    Serial.print(throttle);
+    /*Serial.print(throttle);
     Serial.print(' ');
-    Serial.println(getHalls());
-    
+    Serial.print(i);
+    Serial.print(' ');
+    Serial.println(hallOrder[getHalls()]);*/
+
+    /*minI = 9999;
+    maxI = 0;*/
   }
   digitalWrite(LED2, LOW);
-  delay(1);
+  delayMicroseconds(100);
 }
 
 uint8_t getHalls()
