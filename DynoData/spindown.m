@@ -1,10 +1,11 @@
-clear; clc; close all;
+clear; clc; %close all;
 
 ACCEL_WINDOW = 54;
 %ROT_INERTIA = 0.8489;
 
 %data = importdata('unloaded_spindown.txt');
-data = importdata('motorUnplugged_spindown.txt');
+data = importdata('unloaded_spindown_5_28.txt');
+%data = importdata('motorUnplugged_spindown.txt');
 
 rpm = data(:, 4);
 
@@ -26,7 +27,7 @@ for i = 1:length(velo) - ACCEL_WINDOW
     accel(i) = (velo(i2) - velo(i)) / (time(i2) - time(i)); 
 end
 
-plot(velo);
+%plot(velo);
 
 startWindow = 0;
 endWindow = 0;
@@ -45,7 +46,7 @@ for i = startWindow:length(velo)
    end
 end
 
-figure(1); clf;
+figure; clf;
 plot(velo); hold on;
 line([startWindow, startWindow], [0, 100], 'Color', 'black', 'LineWidth', 3);
 line([endWindow, endWindow], [0, 100], 'Color', 'red', 'LineWidth', 3);
@@ -54,7 +55,7 @@ veloCut = velo(startWindow:endWindow);
 accelCut = accel(startWindow:endWindow);
 rpmCut = rpm(startWindow:endWindow);
 
-figure(2);
+figure;
 plot(rpmCut, accelCut);
 
 coeffs = polyfit(veloCut, accelCut, 3)
