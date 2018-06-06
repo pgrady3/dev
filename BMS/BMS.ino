@@ -25,12 +25,13 @@
 #define MAX_TEMPERATURE 50.0
 
 #define WHEEL_CIRC 1.492
-#define WHEEL_TICKS 9
+#define WHEEL_TICKS 8
 #define TICK_DIST (WHEEL_CIRC / WHEEL_TICKS)
 
 volatile uint32_t tickTimes[WHEEL_TICKS];
 volatile uint32_t tickPos;
 
+volatile uint32_t loopTime = 0;
 volatile uint32_t lastHallPulse = 0;
 volatile uint32_t lastInaMeasurement = 0;
 volatile uint32_t countIntervals = 0;
@@ -84,9 +85,15 @@ void setup() {
   myFile = SD.open("data.txt", FILE_WRITE);
 
   GPS.begin(9600);
+  GPS.sendCommand(PMTK_SET_BAUD_57600);
+  delay(1000);
+  Serial1.end();
+  
+  delay(1000);
+  GPS.begin(57600);
   
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);   // 1 Hz update rate
 }
 
 double readCell(uint8_t cell)
@@ -103,7 +110,19 @@ double readCell(uint8_t cell)
   return volt;
 }
 
-void loop() {
+void loop() {  
+  while(GPS.read());//parse all GPS chars available
+
+  if (GPS.newNMEAreceived())
+    GPS.parse(GPS.lastNMEA());
+
+  
+  uint32_t curTime = millis();
+  if(curTime < loopTime + 100)//if less than 100ms, start over
+    return;
+  
+  loopTime = curTime;
+
   InaVoltage = INAvoltage();
   InaCurrent = INAcurrent();
   InaPower = InaVoltage * InaCurrent;
@@ -118,45 +137,7 @@ void loop() {
   
   distance = distTicks * TICK_DIST;
   
-  /*Serial.println(readH2(0x00));
-  Serial.println(readH2(0x10));
-  Serial.println(readH2(0x11));
-  Serial.println(readH2(0x12));*/
-
-  //writeH2(0x24, 6000);
-  
-  while(GPS.read())
-    ;
-
-  if (GPS.newNMEAreceived())
-    GPS.parse(GPS.lastNMEA());
-
-  if(analogRead(H2_SENSOR) < 200)
-    h2Detected++;
-
-  /*if(h2Detected > 5)
-  {
-    digitalWrite(RELAY, LOW);
-    digitalWrite(SOLENOID, LOW);
-    digitalWrite(LED1, !digitalRead(LED1));
-    digitalWrite(LED2, !digitalRead(LED2));
-  }*/
-
-  /*Serial.print("Location: ");
-  Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-  Serial.print(", "); 
-  Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
-  
-  Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-  Serial.print("Angle: "); Serial.println(GPS.angle);
-  Serial.print("Altitude: "); Serial.println(GPS.altitude);
-  Serial.print("Satellites: "); Serial.println((int)GPS.satellites);*/
-  
   writeToBtSd();
-
-  //digitalWrite(SOLENOID, !digitalRead(SOLENOID));
-
-  delay(100);
 }
 
 void countHallPulse() {
@@ -175,13 +156,22 @@ void countHallPulse() {
 }
 
 void writeToBtSd() {
+  uint32_t startMicros = micros();
+  
   String outputStr = String(InaVoltage, 3) + " " + String(InaCurrent, 3) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
                      String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis());// + " " + GPS.latitude * 100 + GPS.lat + 
-                     //" " + GPS.longitude * 100 + GPS.lon + " " + String(GPS.satellites);
+                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis());// + " " + String(GPS.latitude, 4) + String(GPS.lat) + 
+                     //" " + String(GPS.longitude, 4) + String(GPS.lon) + " " + String(GPS.satellites);
+  
+  
   Serial.println(outputStr);
+  
   Serial2.println(outputStr);
+
+  //Serial.println(micros() - startMicros);
   
   myFile.println(outputStr);
   myFile.flush();
+  
+  
 }
