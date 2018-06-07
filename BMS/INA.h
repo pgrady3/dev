@@ -1,3 +1,8 @@
+#define CURRENT_CAL 0.9779 //H2 BMS #1
+
+#warning "Make sure CURRENT_CAL is set!"
+
+
 uint16_t INAreadReg(uint8_t reg);
 void INAinit();
 double INAvoltage();
@@ -6,13 +11,13 @@ double INAcurrent();
 double INAcurrent()
 {
   int16_t raw = INAreadReg(0x01); //deliberate bad cast! the register is stored as two's complement
-  return raw * 0.0000025 / 0.001 ; //2.5uV lsb and 1mOhm resistor
+  return (float)raw / 400.0 * CURRENT_CAL; //2.5uV lsb and 1mOhm resistor
 }
 
 double INAvoltage()
 {
   uint16_t raw = INAreadReg(0x02);
-  return raw * 0.00125; //multiply by 1.25mV LSB
+  return (float)raw / 800.0; //multiply by 1.25mV LSB
 }
 
 void INAinit()

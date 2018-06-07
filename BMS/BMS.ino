@@ -3,6 +3,7 @@
 #include "Adafruit_GPS.h"
 #include "INA.h"
 #include "H2.h"
+#include "ms5611.h"
 
 #define LED1 3
 #define LED2 21
@@ -16,13 +17,7 @@
 #define SOLENOID 7
 #define HALL 23
 #define SD_CS 8
-#define H2_SENSOR 22
-
-
-#define NUMBER_OF_CELLS 16
-#define CELL_MIN 2.7
-#define CELL_MAX 4.2
-#define MAX_TEMPERATURE 50.0
+#define TEMP 22
 
 #define WHEEL_CIRC 1.492
 #define WHEEL_TICKS 8
@@ -46,12 +41,14 @@ double InaVoltage = 0.0;
 double InaCurrent = 0.0;
 double InaPower = 0;
 double batteryVoltage = 0.0;
+double startingAlt = 0;
 
 bool batteryOK = true;
 uint32_t h2Detected = 0;
 
 File myFile;
 Adafruit_GPS GPS(&Serial1);
+MS5611 baro;
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
@@ -59,7 +56,7 @@ void setup() {
   INAinit();
 
   Serial.begin(115200);
-  Serial2.begin(38400);
+  Serial2.begin(115200);
   SD.begin(SD_CS);
 
   pinMode(LED1, OUTPUT);
@@ -82,32 +79,27 @@ void setup() {
 
   attachInterrupt(HALL, countHallPulse, FALLING);
 
+  baro.init(0x76);
   myFile = SD.open("data.txt", FILE_WRITE);
 
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_BAUD_57600);
-  delay(1000);
+  delay(500);
   Serial1.end();
   
-  delay(1000);
+  delay(500);
   GPS.begin(57600);
   
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);   // 1 Hz update rate
-}
 
-double readCell(uint8_t cell)
-{
-  digitalWrite(S0, cell & 1);
-  cell = cell >> 1;
-  digitalWrite(S1, cell & 1);
-  cell = cell >> 1;
-  digitalWrite(S2, cell & 1);
-  cell = cell >> 1;
-  digitalWrite(S3, cell & 1);
-  delayMicroseconds(1000);
-  double volt = (double)analogRead(14) / 1024 * 3.3 / 2.2 * 26.2;
-  return volt;
+  for(uint32_t i = 0; i < 2000; i++)//let the baro initialize
+  {
+    baro.poll();
+    delay(1);
+  }
+  startingAlt = baro.getAlt();
+  
 }
 
 void loop() {  
@@ -116,6 +108,7 @@ void loop() {
   if (GPS.newNMEAreceived())
     GPS.parse(GPS.lastNMEA());
 
+  baro.poll();
   
   uint32_t curTime = millis();
   if(curTime < loopTime + 100)//if less than 100ms, start over
@@ -123,21 +116,63 @@ void loop() {
   
   loopTime = curTime;
 
+  uint8_t btn = readBtn();
+  updateThrottle(btn == 5);
+
+  //Serial.println(baro.getAlt() - startingAlt);
+  
+  updateINA();
+  updateSpeed();
+  writeToBtSd();
+}
+
+void updateThrottle(uint8_t pressed)
+{
+  static int debounce = 0;
+  if(pressed && debounce < 20)
+    debounce++;
+
+  if(!pressed && debounce > 0)
+    debounce--;
+
+  if(debounce < 10)//if we're less than the debounce thresh, don't do anything
+    return;
+  
+  Serial.println("passed");
+}
+
+uint8_t readBtn()
+{
+  uint16_t btnAnalog = analogRead(TEMP);
+
+  uint8_t btn = 0;
+  if(btnAnalog < 10)  btn = 1;
+  if(btnAnalog < 320 && btnAnalog > 300)  btn = 2;
+  if(btnAnalog < 145 && btnAnalog > 125)  btn = 3;
+  if(btnAnalog < 490 && btnAnalog > 470)  btn = 4;
+  if(btnAnalog < 730 && btnAnalog > 710)  btn = 5;
+  
+  return btn;
+}
+
+void updateINA()
+{
   InaVoltage = INAvoltage();
   InaCurrent = INAcurrent();
   InaPower = InaVoltage * InaCurrent;
   
   double currentInaTime = millis();
   energyUsed += InaPower * (currentInaTime - lastInaMeasurement) / 1000;
-  lastInaMeasurement = currentInaTime;
+  lastInaMeasurement = currentInaTime;  
+}
 
+void updateSpeed()
+{
   currentSpeed = 1000000.0 / avgdT * WHEEL_CIRC; 
   if(micros() - lastHallPulse > 2000000)
     currentSpeed = 0;
   
   distance = distTicks * TICK_DIST;
-  
-  writeToBtSd();
 }
 
 void countHallPulse() {
@@ -164,14 +199,12 @@ void writeToBtSd() {
                      //" " + String(GPS.longitude, 4) + String(GPS.lon) + " " + String(GPS.satellites);
   
   
-  Serial.println(outputStr);
-  
-  Serial2.println(outputStr);
+  Serial.println(outputStr);//usb
+  Serial2.println(outputStr);//bluetooth
 
-  //Serial.println(micros() - startMicros);
   
   myFile.println(outputStr);
   myFile.flush();
   
-  
+  Serial.println(micros() - startMicros);
 }
