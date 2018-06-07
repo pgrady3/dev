@@ -27,10 +27,40 @@
 #define MAX_THROTTLE  1000
 #define MIN_THROTTLE  300
 
+volatile uint8_t reg = 0;
+volatile uint16_t BMSThrottle = 0;
+volatile uint32_t BMSMillis = 0;
+
 uint16_t SPIread(uint8_t addr);
 void SPIwrite(uint8_t addr, uint16_t data);
 void setupPins();
 float getThrottle();
+void receiveEvent(size_t count);
+void requestEvent(void);
+
+void receiveEvent(size_t count)
+{
+  reg = Wire.readByte();
+
+  if(reg == 0x40)//set throttle
+  {
+    BMSThrottle = Wire.readByte() << 8;
+    BMSThrottle |= Wire.readByte();
+    
+    BMSMillis = millis();
+  }
+}
+
+
+void requestEvent(void)
+{
+  uint8_t data = 0;
+  
+  if(reg == 0x12)
+    data = 0x34;
+    
+  Wire.write(&data, 1);
+}
 
 float getThrottle()
 {
@@ -76,6 +106,10 @@ void setupPins()
   SPI.begin();
   SPI.setClockDivider(SPI_CLOCK_DIV128);
   SPI.setDataMode(SPI_MODE1);
+
+  Wire.begin(I2C_SLAVE, 0x66, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);//initialize i2c
+  Wire.onReceive(receiveEvent);//setup events
+  Wire.onRequest(requestEvent);
   
   pinMode(ISENSE1, INPUT);
   pinMode(ISENSE2, INPUT);

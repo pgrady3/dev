@@ -1,3 +1,4 @@
+#include <i2c_t3.h>
 #include "TimerOne.h"
 #include "SPI.h"
 #include "config.h"
@@ -46,7 +47,7 @@ void hallISR()
 }
 
 void loop(){
-  digitalWrite(LED2, HIGH);  
+    
   
   uint32_t curTime = millis();
 
@@ -76,22 +77,31 @@ void loop(){
   
   if(curTime - lastTime > 50)
   {
-    throttle = getThrottle() * 4095;
+    volatile uint16_t driverThrottle = getThrottle() * 4095;
+    if(curTime - BMSMillis < 300)//less than 300ms since BMS update
+    {
+      digitalWrite(LED2, HIGH);
+      if(BMSThrottle == 0)
+        throttle = driverThrottle;
+      else
+        throttle = BMSThrottle / 16;//scale from full 16 bit to 12 bit
+    }
+    else
+    {
+      digitalWrite(LED2, LOW);
+      throttle = driverThrottle;
+    }
+    
     hallISR();
-
-    //float i = (minI - 512.0) / 13.0;
     
     lastTime = curTime;
-    /*Serial.print(throttle);
-    Serial.print(' ');
-    Serial.print(i);
-    Serial.print(' ');
-    Serial.println(hallOrder[getHalls()]);*/
-
-    /*minI = 9999;
-    maxI = 0;*/
+    Serial.print(driverThrottle);
+    Serial.print(" ");
+    Serial.print(analogRead(THROTTLE));
+    Serial.print(" ");
+    Serial.println(throttle);
   }
-  digitalWrite(LED2, LOW);
+
   delayMicroseconds(100);
 }
 

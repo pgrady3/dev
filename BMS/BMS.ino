@@ -42,6 +42,8 @@ double InaCurrent = 0.0;
 double InaPower = 0;
 double batteryVoltage = 0.0;
 double startingAlt = 0;
+double currentAlt = 0;
+double throttle = 0;
 
 bool batteryOK = true;
 uint32_t h2Detected = 0;
@@ -69,6 +71,7 @@ void setup() {
 
   pinMode(RELAY, OUTPUT);
   pinMode(SOLENOID, OUTPUT);
+  pinMode(TEMP, INPUT);
   digitalWrite(RELAY, HIGH);
   digitalWrite(SOLENOID, HIGH);
 
@@ -109,48 +112,65 @@ void loop() {
     GPS.parse(GPS.lastNMEA());
 
   baro.poll();
+  currentAlt = baro.getAlt() - startingAlt;
   
   uint32_t curTime = millis();
   if(curTime < loopTime + 100)//if less than 100ms, start over
     return;
   
   loopTime = curTime;
+  updateINA();
+  updateSpeed();
 
+  
   uint8_t btn = readBtn();
   updateThrottle(btn == 5);
 
-  //Serial.println(baro.getAlt() - startingAlt);
-  
-  updateINA();
-  updateSpeed();
   writeToBtSd();
 }
 
 void updateThrottle(uint8_t pressed)
 {
   static int debounce = 0;
-  if(pressed && debounce < 20)
+  if(pressed && debounce < 13)
     debounce++;
 
   if(!pressed && debounce > 0)
     debounce--;
-
-  if(debounce < 10)//if we're less than the debounce thresh, don't do anything
-    return;
   
-  Serial.println("passed");
+  if(debounce > 10)//debounce thresh
+  {
+    float errorCurrent = 4 - InaCurrent;
+    throttle += errorCurrent * 0.012;
+
+    if(errorCurrent < -4)//failsafe
+      throttle = 0;
+  }
+  else
+    throttle = 0;
+
+
+  //Write over I2C
+  uint16_t rawThrottle = throttle * 65535;
+  Wire.beginTransmission(0x66);
+  Wire.write(0x40);//throttle register
+  Wire.write((rawThrottle >> 8) & 0xFF);
+  Wire.write(rawThrottle & 0xFF);
+  Wire.endTransmission();
 }
 
 uint8_t readBtn()
 {
   uint16_t btnAnalog = analogRead(TEMP);
+  //Serial.println(btnAnalog);
 
   uint8_t btn = 0;
-  if(btnAnalog < 10)  btn = 1;
-  if(btnAnalog < 320 && btnAnalog > 300)  btn = 2;
-  if(btnAnalog < 145 && btnAnalog > 125)  btn = 3;
-  if(btnAnalog < 490 && btnAnalog > 470)  btn = 4;
-  if(btnAnalog < 730 && btnAnalog > 710)  btn = 5;
+  //if(btnAnalog < 10)  btn = 1;
+  //if(btnAnalog < 320 && btnAnalog > 300)  btn = 2;
+  //if(btnAnalog < 145 && btnAnalog > 125)  btn = 3;
+  //if(btnAnalog < 490 && btnAnalog > 470)  btn = 4;
+  //if(btnAnalog < 730 && btnAnalog > 710)  btn = 5;
+  //if(btnAnalog < 146 && btnAnalog > 137)  btn = 5;//quick hack since two button boards are different?
   
   return btn;
 }
@@ -191,20 +211,22 @@ void countHallPulse() {
 }
 
 void writeToBtSd() {
-  uint32_t startMicros = micros();
+  //uint32_t startMicros = micros();
   
   String outputStr = String(InaVoltage, 3) + " " + String(InaCurrent, 3) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
-                     String(energyUsed) + " " + String(distance) + " " + String(temperature) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis());// + " " + String(GPS.latitude, 4) + String(GPS.lat) + 
-                     //" " + String(GPS.longitude, 4) + String(GPS.lon) + " " + String(GPS.satellites);
+                     String(energyUsed) + " " + String(distance) + " " + String(currentAlt) + " " + 
+                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis()) + " " + String(GPS.latitudeDegrees, 5) + 
+                     " " + String(GPS.longitudeDegrees, 5) + " " + String(GPS.altitude) + " " + String(GPS.satellites);
   
   
   Serial.println(outputStr);//usb
+  
   Serial2.println(outputStr);//bluetooth
+
 
   
   myFile.println(outputStr);
   myFile.flush();
-  
-  Serial.println(micros() - startMicros);
+
+  //Serial.println(micros() - startMicros);
 }
