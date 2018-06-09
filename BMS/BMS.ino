@@ -215,8 +215,8 @@ void writeToBtSd() {
   
   String outputStr = String(InaVoltage, 3) + " " + String(InaCurrent, 3) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
                      String(energyUsed) + " " + String(distance) + " " + String(currentAlt) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis()) + " " + String(GPS.latitudeDegrees, 5) + 
-                     " " + String(GPS.longitudeDegrees, 5) + " " + String(GPS.altitude) + " " + String(GPS.satellites);
+                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis()) + " " + String(GPS.latitudeDegrees, 7) + 
+                     " " + String(GPS.longitudeDegrees, 7) + " " + String(GPS.altitude) + " " + String(GPS.satellites);
   
   
   Serial.println(outputStr);//usb
