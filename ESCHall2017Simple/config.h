@@ -123,7 +123,7 @@ void setupPins()
   digitalWriteFast(DRV_EN_GATE, HIGH);
   delay(100);
 
-  while(SPIread(0x01) != 0x01)
+  /*while(SPIread(0x01) != 0x01)
   {
     Serial.println("DRV init fail");
     SPIwrite(0x02, 0x03);
@@ -137,7 +137,7 @@ void setupPins()
     delay(10);
     digitalWriteFast(DRV_EN_GATE, HIGH);
     delay(500);
-  }
+  }*/
 
   //SPI.end();
 }

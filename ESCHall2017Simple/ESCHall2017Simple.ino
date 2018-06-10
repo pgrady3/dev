@@ -5,7 +5,7 @@
 
 
 uint8_t hallOrder[] = {255, 5, 3, 4, 1, 0, 2, 255}; //for gemini hub motor
-#define HALL_SHIFT 1
+#define HALL_SHIFT 3
 
 //uint8_t hallOrder[] = {255, 1, 3, 2, 5, 0, 4, 255}; //for maxwell motor
 //#define HALL_SHIFT 2
@@ -53,7 +53,9 @@ void loop(){
     hallISR();
     
     lastTime = curTime;
-    Serial.println(getHalls());
+    Serial.print(throttle);
+    Serial.print(" ");
+    Serial.println(hallOrder[getHalls()]);
   }
 
   delayMicroseconds(100);
