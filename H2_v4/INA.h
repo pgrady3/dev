@@ -1,5 +1,5 @@
 #include <i2c_t3.h>
-#define CURRENT_CAL 1
+#define CURRENT_CAL 0.996
 
 #warning "Make sure CURRENT_CAL is set!"
 
@@ -12,7 +12,6 @@ double INAcurrent();
 double INAcurrent()
 {
   int16_t raw = INAreadReg(0x01); //deliberate bad cast! the register is stored as two's complement
-  Serial.println(raw);
   return (float)raw / 2000.0 * CURRENT_CAL; //2.5uV lsb and 5mOhm resistor
 }
 
