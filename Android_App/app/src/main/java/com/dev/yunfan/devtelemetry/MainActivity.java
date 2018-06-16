@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
             altitude.setText(String.valueOf(obj.altitude));
             energy.setText(String.valueOf(obj.energyUsed - lastPressEnergy));
             if (lastPressTime == 0)
-                timeView.setText(String.valueOf(obj.msSinceStart / 1000));
+                timeView.setText(String.valueOf(obj.msSinceStart / 1000.0));
             else
                 timeView.setText(String.valueOf((System.currentTimeMillis() - lastPressTime) / 1000));
         }
