@@ -1,0 +1,59 @@
+{
+  "project_info": {
+    "project_number": "972240288230",
+    "firebase_url": "https://devtelemetry-d7cd1.firebaseio.com",
+    "project_id": "devtelemetry-d7cd1",
+    "storage_bucket": "devtelemetry-d7cd1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972240288230:android:a9509495aeba27ac",
+        "android_client_info": {
+          "package_name": "com.dev.yunfan.devtelemetry"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "972240288230-66mogdf3f5c698epi3v3cv4fcmub6d5b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dev.yunfan.devtelemetry",
+            "certificate_hash": "40ca7c934370f2ccdc94be22e9aa4dcc1a5ead01"
+          }
+        },
+        {
+          "client_id": "972240288230-mlaptlcth260umunnp8co18f33q6r9qj.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "972240288230-mlaptlcth260umunnp8co18f33q6r9qj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiL3zBnj_hvxwm60QOtK76OOJVv9Dto4s"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "972240288230-mlaptlcth260umunnp8co18f33q6r9qj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -9,6 +9,9 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,8 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 
-//Isaac is great.
-//Isaac is my friend. He insists on keeping the line above. -Yunfanß
+
 public class BtDataService extends Service {
     private static final String TAG = "DATA_SERVICE";
     private static BluetoothAdapter btAdapter;
@@ -85,7 +87,8 @@ public class BtDataService extends Service {
         BluetoothDevice btDevice = null;
 
         for (BluetoothDevice device : devices) {
-            if (device.getAddress().equals("20:16:10:27:14:80")) {
+            //Log.e(TAG, device.getName());
+            if (device.getName().contains("HC")) {
                 btDevice = device;
                 break;
             }
@@ -135,6 +138,8 @@ public class BtDataService extends Service {
         private InputStream inStream;
         private OutputStream outStream;
         private BufferedReader btReader;
+        FirebaseDatabase database = null;
+        DatabaseReference myRef = null;
 
         private BtConnectionThread() {
             if (btSocket == null) {
@@ -148,6 +153,9 @@ public class BtDataService extends Service {
             } catch (IOException e) {
                 Log.e(TAG, "Socket stream cannot be created", e);
             }
+
+            database = FirebaseDatabase.getInstance();
+            myRef =  database.getReference("values");
         }
 
         public void run() {
@@ -177,6 +185,7 @@ public class BtDataService extends Service {
                     DataObj newData = new DataObj(result, sessionName);
                     dataCache.add(newData);
                     mostUpToDate = newData;
+                    myRef.push().setValue(newData);
                 } catch (IOException e) {
                     Log.e(TAG, "disconnected", e);
                     disconnect();

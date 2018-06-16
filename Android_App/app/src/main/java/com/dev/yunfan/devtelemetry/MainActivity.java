@@ -9,13 +9,27 @@ import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MAIN_UI";
     private static BluetoothAdapter btAdapter;
-    private TextView mainText;
+    private TextView speed;
+    private TextView distance;
+    private TextView power;
+    private TextView voltage;
+    private TextView timeView;
+    private TextView current;
+    private TextView energy;
+    private TextView altitude;
+    private Button button;
+    private long lastPressTime = 0;
+    private double lastPressEnergy = 0.0;
+    private double lastPressDistance = 0.0;
+
     private BtDataService dataService;
     private dataConnection connection;
     private UiThread uiThread;
@@ -26,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             try {
                 while (!isInterrupted()) {
-                    Thread.sleep(1000);
+                    Thread.sleep(300);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -58,7 +72,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mainText = (TextView) findViewById(R.id.MAIN_TEXT);
+
+        speed = (TextView) findViewById(R.id.speed);
+        distance = (TextView) findViewById(R.id.distance);
+        power = (TextView) findViewById(R.id.power);
+        voltage = (TextView) findViewById(R.id.voltage);
+        current = (TextView) findViewById(R.id.current);
+        altitude = (TextView) findViewById(R.id.altitude);
+        timeView = (TextView) findViewById(R.id.timeView);
+        energy = (TextView) findViewById(R.id.energyUsed);
+
+        button = (Button) findViewById(R.id.startButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                lastPressTime = System.currentTimeMillis();
+                if (isBound) {
+                    DataObj obj = dataService.getMostRecent();
+                    lastPressDistance = obj.mileage;
+                    lastPressEnergy = obj.energyUsed;
+                }
+            }
+        });
+
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         if (btAdapter == null) {
             Log.e(TAG, "Bluetooth not supported by this phone!");
@@ -113,9 +148,19 @@ public class MainActivity extends AppCompatActivity {
         DataObj obj = null;
         if (isBound)
             obj = dataService.getMostRecent();
-        if (obj != null)
-            result = obj.toString();
-        mainText.setText(result);
+        if (obj != null) {
+            speed.setText(String.valueOf(obj.speed));
+            distance.setText(String.valueOf(obj.mileage - lastPressDistance));
+            power.setText(String.valueOf(obj.power));
+            voltage.setText(String.valueOf(obj.voltage));
+            current.setText(String.valueOf(obj.current));
+            altitude.setText(String.valueOf(obj.altitude));
+            energy.setText(String.valueOf(obj.energyUsed - lastPressEnergy));
+            if (lastPressTime == 0)
+                timeView.setText(String.valueOf(obj.msSinceStart / 1000));
+            else
+                timeView.setText(String.valueOf((System.currentTimeMillis() - lastPressTime) / 1000));
+        }
         Log.i(TAG, "Update UI successful.");
     }
 }

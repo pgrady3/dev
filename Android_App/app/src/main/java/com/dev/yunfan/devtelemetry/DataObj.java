@@ -13,11 +13,11 @@ import java.util.Date;
 class DataObj {
     private static final String TAG = "DataObj";
 
+    String rawInput = "";
     String sessionName = "";
     String timeStamp = "";
     String longitude = "";
     String latitude = "";
-    String altitude = "";
     String heading = "";
     int msSinceStart = 0;
     double voltage = 0.0;
@@ -28,6 +28,8 @@ class DataObj {
     double energyUsed = 0.0;
     double temperature = 0.0;
     double batteryVoltage = 0.0;
+    double altitude = 0.0;
+
 
     // True is OK. Let's pray we won't have false.
     boolean batteryStatus = true;
@@ -49,7 +51,9 @@ class DataObj {
             batteryStatus = (battery == 1);
             batteryVoltage = Double.parseDouble(strings[8]);
             msSinceStart = Integer.parseInt(strings[9]);
+            altitude = Double.parseDouble(strings[12]);
 
+            rawInput = input;
         } catch (Exception e) {
             Log.e(TAG, "Conversion Error", e);
         }
