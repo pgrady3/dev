@@ -92,7 +92,6 @@ void loop() {
   {
     Serial.print((char)Serial1.read());
   }
-//  Serial.println(flow(1));
   Serial.println();
 
   if (Serial.available() > 0) {
