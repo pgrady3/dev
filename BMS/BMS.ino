@@ -23,6 +23,8 @@
 #define WHEEL_TICKS 8
 #define TICK_DIST (WHEEL_CIRC / WHEEL_TICKS)
 
+#define TARGET_CURRENT 6
+
 volatile uint32_t tickTimes[WHEEL_TICKS];
 volatile uint32_t tickPos;
 
@@ -140,7 +142,7 @@ void updateThrottle(uint8_t pressed)
   
   if(debounce > 10)//debounce thresh
   {
-    float errorCurrent = 4 - InaCurrent;
+    float errorCurrent = TARGET_CURRENT - InaCurrent;
     throttle += errorCurrent * 0.012;
 
     if(errorCurrent < -4)//failsafe
@@ -165,12 +167,11 @@ uint8_t readBtn()
   //Serial.println(btnAnalog);
 
   uint8_t btn = 0;
-  //if(btnAnalog < 10)  btn = 1;
-  //if(btnAnalog < 320 && btnAnalog > 300)  btn = 2;
-  //if(btnAnalog < 145 && btnAnalog > 125)  btn = 3;
-  //if(btnAnalog < 490 && btnAnalog > 470)  btn = 4;
-  //if(btnAnalog < 730 && btnAnalog > 710)  btn = 5;
-  //if(btnAnalog < 146 && btnAnalog > 137)  btn = 5;//quick hack since two button boards are different?
+  if(btnAnalog < 10)  btn = 1;
+  if(btnAnalog < 320 && btnAnalog > 300)  btn = 2;
+  if(btnAnalog < 145 && btnAnalog > 125)  btn = 3;
+  if(btnAnalog < 495 && btnAnalog > 470)  btn = 4;
+  if(btnAnalog < 735 && btnAnalog > 710)  btn = 5;
   
   return btn;
 }
