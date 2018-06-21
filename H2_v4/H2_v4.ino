@@ -205,10 +205,10 @@ void loop() {
 //                Serial.println(incomingByte, DEC);
                 // p = 112, s = 115
    }
-
+   int setpoint = 17;
    Serial.print("Health : ");
-   Serial.println(current - (voltage - 17)/(-0.75));
-   if(voltage > 13.5 && voltage < 17 && current < (voltage - 17)/(-0.75) && (millis() - short_timer) > 10000){
+   Serial.println(current - (voltage - setpoint)/(-0.75));
+   if(voltage > 13.5 && voltage < setpoint && current < (voltage - setpoint)/(-0.75) && (millis() - short_timer) > 10000){
     FCShort(20);
     short_timer = millis();
     Serial.println(short_timer);
