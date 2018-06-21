@@ -23,7 +23,7 @@
             android:layout_height="32dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
-            android:text="Altitude"
+            android:text="mi/kWh"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             android:textColor="@android:color/black"
             android:textSize="24sp"

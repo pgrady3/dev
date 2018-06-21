@@ -154,7 +154,12 @@ public class MainActivity extends AppCompatActivity {
             power.setText(String.valueOf(obj.power));
             voltage.setText(String.valueOf(obj.voltage));
             current.setText(String.valueOf(obj.current));
-            altitude.setText(String.valueOf(obj.altitude));
+
+            double miles = (obj.mileage - lastPressDistance) / 1609.34;
+            double kwh = (obj.energyUsed - lastPressEnergy) / 3.6e6;
+            double mipkwh = miles / kwh;
+
+            altitude.setText(String.valueOf(mipkwh));
             energy.setText(String.valueOf(obj.energyUsed - lastPressEnergy));
             if (lastPressTime == 0)
                 timeView.setText(String.valueOf(obj.msSinceStart / 1000.0));
