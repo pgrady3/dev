@@ -1,4 +1,19 @@
 #define H2_I2C_ADDR 0x60
+#define I2C_READ_FCV  0x10
+#define I2C_READ_FCI 0x11
+#define I2C_READ_FCE 0x12
+#define I2C_READ_FCTEMP 0x13
+#define I2C_READ_H2PRESS 0x14
+#define I2C_READ_H2FLOW  0x15
+#define I2C_READ_H2TOT 0x16
+
+#define I2C_WRITE_PURGE 0x50
+#define I2C_WRITE_SHORT 0x51
+#define I2C_WRITE_CLOSESUPPLY 0x52
+#define I2C_WRITE_OPENSUPPLY 0x53
+#define I2C_WRITE_SETFAN 0x54
+
+
 
 int32_t readH2(uint8_t reg);
 void writeH2(uint8_t reg, int32_t val);
