@@ -2,6 +2,8 @@
 #include <Metro.h>
 #include <stdio.h>
 #include "INA.h"
+#include "global.h"
+#include "Comms.h"
 
 #define LED1 10
 #define LED2 11
@@ -18,14 +20,8 @@
 #define PASS 3
 
 int incomingByte = 0;
-double fanSpeed = .4;
-double voltage = 0;
-double current = 0;
-double power = 0;
-double fan_current = 0;
-float prct = 0;
-double temp = 0;
-double health = 0;
+
+uint32_t printInt = 50;
 
 int short_start = 999999999;
 int start_Purge_delay = 999999999;
@@ -34,11 +30,12 @@ int start_Purge = 999999999;
 int setpoint = 16.95;
 
 float flow = 0;
+float total = 0;
 float h2energy = 0;
 float eff = 0;
 float flowcurrent = 0;
 float leak = 0;
-int purgeCount = 0;
+int purgeCount = 1;
 
 #define FLOWMETER_BUF_SIZE 100
 char flowmeterBuf[FLOWMETER_BUF_SIZE];
@@ -66,6 +63,7 @@ Metro Purge_DurationTimer = Metro(Purge_Duration);
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
+  Comms_setup();
   Serial.begin(115200);
   Serial1.begin(57600);
   UART0_C3 = 16;//tx invert
@@ -102,7 +100,7 @@ void loop() {
 
   uint32_t cur = millis();
   static uint32_t lastTime = 0;
-  if(cur - lastTime >= 50)
+  if(cur - lastTime >= printInt)
   {
     lastTime = cur;
     getData();
@@ -112,7 +110,6 @@ void loop() {
   
   updateShort();
   updatePurge();
-  
 }
 
 void bootup(){
@@ -130,7 +127,6 @@ void bootup(){
   analogWrite(FAN,fanSpeed*255);
 
   short_start = millis();
-  
 }
 
 void purge(int duration)
@@ -152,13 +148,18 @@ void FCShort(uint32_t duration)
 }
 
 void getData(){
-
+  
+  static uint32_t lastIntegrationMicros = micros();
+  uint32_t curMicros = micros();
+  
   // Fuel cell numbers
   voltage = INAvoltage();
   current = INAcurrent();
   power = voltage*current;
+  totFCNRG = totFCNRG + (power*(curMicros - lastIntegrationMicros))/1e6;
   health = current - (voltage - setpoint)/(-0.75);  
-
+  lastIntegrationMicros = curMicros;
+  
   // fan
   fan_current = analogRead(FAN_READ) / 4096.0 * 3.3 / 0.20;
 
@@ -167,17 +168,23 @@ void getData(){
   temp = ((20 + (prct/(1-prct)*1208 - 1076)/3.8) * 9/5 + 32);
   
   // flowmeter reading
-  flow = readFlowmeter();  // mg/s
+//  mass = massFlow;
+  readFlowmeter();
+  flow = massFlow[0];  // mg/s
+  total = massFlow[1]; // g
   h2energy = flow/1000*119.96e3;     // W
-
+  totH2NRG = total*119.96e3;
+  
   // efficiency and leaks
   eff = power/h2energy*100;
   flowcurrent = flow/2.01588 * 2 * 6.0221409e23 * 1.60217733e-19 / 20; // A
   leak = (flowcurrent - current)/flowcurrent*100;
+
+  allEff = totFCNRG/totH2NRG*100;
   
 }
 
-float readFlowmeter()
+void readFlowmeter()
 {
   Serial1.print("A\r");
   while(Serial1.available())
@@ -190,21 +197,27 @@ float readFlowmeter()
   }
   
   flowmeterBuf[flowmeterBufPos] = 0;
+  
+//  Serial.println(flowmeterBuf);
   char* buf;
-  float massFlow = 0;
+//  float massFlow[2] = {0,0};
   int pos = 0;
   buf = strtok (flowmeterBuf," ");
   
   while (buf != NULL)
   {
+    if(pos == 1)
+      flowPres = atof(buf);
     if(pos == 4)
-      massFlow = atof(buf);
+      massFlow[0] = atof(buf);
+    if(pos == 5)
+      massFlow[1] = atof(buf);
     pos++;
     buf = strtok (NULL, " ");
   }
   flowmeterBufPos = 0;
     
-  return massFlow;
+//  return massFlow;
 }
 
 void printData(uint32_t cur){
@@ -223,7 +236,15 @@ void printData(uint32_t cur){
   Serial.print(" ");
   Serial.print(leak,4);
   Serial.print(" ");
-  Serial.println(cur);
+  Serial.print(cur);
+  Serial.print(" ");
+  Serial.print(total,4);
+  Serial.print(" ");
+  Serial.print(allEff,4);
+  Serial.print(" ");
+  Serial.print(totFCNRG,4);
+  Serial.print(" ");
+  Serial.println(flowPres,4);
 }
 
 void readInputs(){
@@ -235,6 +256,7 @@ void readInputs(){
         }
         if(incomingByte=='s'){
           FCShort_Start();
+          purgeCount++;
         }
         if(incomingByte >= '0' && incomingByte <= '9'){
           float val = (incomingByte - '0') / 10.0;
@@ -282,6 +304,7 @@ void updatePurge()
 
 void FCShort_Start()
 {
+  
   short_start = millis();
   digitalWrite(PASS, LOW);
   delay(1);
@@ -307,6 +330,7 @@ void FCPurge_Stop()
 {
   digitalWrite(PURGE_VALVE,LOW);
 }
+
 
 
 
