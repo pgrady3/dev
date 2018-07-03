@@ -18,6 +18,10 @@
 int32_t readH2(uint8_t reg);
 void writeH2(uint8_t reg, int32_t val);
 
+double mgtoJ(double mg)//convert milligrams of H2 to joules
+{
+  return mg * 119.93;
+}
 
 int32_t readH2(uint8_t reg)
 {

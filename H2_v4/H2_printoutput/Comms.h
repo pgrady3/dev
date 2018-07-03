@@ -39,11 +39,20 @@ void i2cReceiveEvent(size_t count) {
     if(lastCmd == I2C_READ_FCI)
       i2cmemStore((int32_t) (current*1000));
 
+    if(lastCmd == I2C_READ_FCE)
+      i2cmemStore((int32_t) (totFCNRG*1000));
+
+    if(lastCmd == I2C_READ_FCTEMP)
+      i2cmemStore((int32_t) (temp*1000));
+
     if(lastCmd == I2C_READ_H2PRESS)
       i2cmemStore((int32_t) (flowPres*1000));
     
     if(lastCmd == I2C_READ_H2FLOW)
       i2cmemStore((int32_t) (massFlow[0]*1000));
+
+    if(lastCmd == I2C_READ_H2TOT)
+      i2cmemStore((int32_t) (massFlow[1]*10000));//10 thousand
   }
 }
 

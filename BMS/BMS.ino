@@ -46,17 +46,25 @@ double batteryVoltage = 0.0;
 double startingAlt = 0;
 double currentAlt = 0;
 double throttle = 0;
+double FCV = 0;
+double FCI = 0;
+double FCE = 0;
+double FCTemp = 0;
+double H2Press = 0;
+double H2Flow = 0;
+double H2Tot = 0;
+double H2Eff = 0;
 
 bool batteryOK = true;
 uint32_t h2Detected = 0;
 
 File myFile;
 Adafruit_GPS GPS(&Serial1);
-MS5611 baro;
+//MS5611 baro;
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
-  //Wire.setDefaultTimeout(100);
+  //Wire.setDefaultTimeout(100);//this makes i2c not work?
   INAinit();
 
   Serial.begin(115200);
@@ -84,40 +92,26 @@ void setup() {
 
   attachInterrupt(HALL, countHallPulse, FALLING);
 
-  baro.init(0x76);
+  //baro.init(0x76);
   myFile = SD.open("data.txt", FILE_WRITE);
 
-  GPS.begin(9600);
-  GPS.sendCommand(PMTK_SET_BAUD_57600);
-  delay(500);
-  Serial1.end();
-  
-  delay(500);
-  GPS.begin(57600);
-  
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);   // 1 Hz update rate
+  GPSInit();
 
-  for(uint32_t i = 0; i < 2000; i++)//let the baro initialize
+  /*for(uint32_t i = 0; i < 2000; i++)//let the baro initialize
   {
     baro.poll();
     delay(1);
   }
-  startingAlt = baro.getAlt();
+  startingAlt = baro.getAlt();*/
   
 }
 
 void loop() {  
-  while(GPS.read());//parse all GPS chars available
+  GPSPoll();
 
-  if (GPS.newNMEAreceived())
-    GPS.parse(GPS.lastNMEA());
+  //baro.poll();
+  //currentAlt = baro.getAlt() - startingAlt;
 
-  baro.poll();
-  currentAlt = baro.getAlt() - startingAlt;
-
-  
-  
   uint32_t curTime = millis();
   if(curTime < loopTime + 100)//if less than 100ms, start over
     return;
@@ -125,16 +119,26 @@ void loop() {
   loopTime = curTime;
   updateINA();
   updateSpeed();
-
+  pollH2();
   
   uint8_t btn = readBtn();
   updateThrottle(btn == 5);
 
   writeToBtSd();
-  Serial.println(readH2(I2C_READ_FCV));
-  Serial.println(readH2(I2C_READ_FCI));
-  Serial.println(readH2(I2C_READ_H2PRESS));
-  Serial.println(readH2(I2C_READ_H2FLOW));
+
+}
+
+void pollH2()
+{
+  FCV = readH2(I2C_READ_FCV) / 1000.0;
+  FCI = readH2(I2C_READ_FCI) / 1000.0;
+  FCE = readH2(I2C_READ_FCE) / 1000.0;
+  FCTemp = readH2(I2C_READ_FCTEMP) / 1000.0;
+  H2Press = readH2(I2C_READ_H2PRESS) / 1000.0;
+  H2Flow = readH2(I2C_READ_H2FLOW) / 1000.0;
+  H2Tot = readH2(I2C_READ_H2TOT) / 10000.0;//10 thousand
+
+  H2Eff = FCV * FCI / mgtoJ(H2Flow);
 }
 
 void updateThrottle(uint8_t pressed)
@@ -217,21 +221,41 @@ void countHallPulse() {
   digitalWrite(LED1, (distTicks) & 1);
 }
 
+void GPSInit()
+{
+  GPS.begin(9600);
+  GPS.sendCommand(PMTK_SET_BAUD_57600);
+  delay(500);
+  Serial1.end();
+  
+  delay(500);
+  GPS.begin(57600);
+  
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);   // 10 Hz update rate
+}
+
+void GPSPoll()
+{
+  while(GPS.read());
+  
+  if (GPS.newNMEAreceived())
+    GPS.parse(GPS.lastNMEA());
+}
+
 void writeToBtSd() {
   //uint32_t startMicros = micros();
   
   String outputStr = String(InaVoltage, 3) + " " + String(InaCurrent, 3) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
-                     String(energyUsed) + " " + String(distance) + " " + String(currentAlt) + " " + 
-                     String(batteryOK) + " "+ String(batteryVoltage) +" " + String(millis()) + " " + String(GPS.latitudeDegrees, 7) + 
-                     " " + String(GPS.longitudeDegrees, 7) + " " + String(GPS.altitude) + " " + String(GPS.satellites);
+                     String(energyUsed) + " " + String(distance) + " " + String(FCV, 3) + " " + 
+                     String(FCI, 3) + " "+ String(FCE, 1) +" " + String(millis()) + " " + String(GPS.latitudeDegrees, 7) + 
+                     " " + String(GPS.longitudeDegrees, 7) + " " + String(FCTemp, 1) + " " + String(H2Press, 1) + " " + String(H2Flow, 3) + " " + String(H2Tot, 4) + " " + String(H2Eff, 4);
   
   
-  Serial.println(outputStr);//usb
-  
+  Serial.println(outputStr);//usb  
+  GPSPoll();//super hacky bc short GPS buffer
   Serial2.println(outputStr);//bluetooth
-
-
-  
+  GPSPoll();
   myFile.println(outputStr);
   myFile.flush();
 
