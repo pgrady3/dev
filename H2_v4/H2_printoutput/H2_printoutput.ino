@@ -31,7 +31,7 @@ int short_start = 999999999;
 int start_Purge_delay = 999999999;
 int start_Purge = 999999999;
 
-int setpoint = 16.5;
+int setpoint = 16.95;
 
 float flow = 0;
 float h2energy = 0;
@@ -128,6 +128,8 @@ void bootup(){
   analogWrite(FAN,HIGH);
   delay(100);
   analogWrite(FAN,fanSpeed*255);
+
+  short_start = millis();
   
 }
 
@@ -249,7 +251,11 @@ void changeFan(double fanSpeed){
 }
 
 void updateShort(){
-  if(health < 0 && (millis() - short_start) > 10000 && voltage > 13.5 && voltage < 17){
+// health based purge
+//  if(health < 0 && (millis() - short_start) > 10000 && voltage > 13.5 && voltage < 17){
+
+// timed short/purge
+   if(abs((millis() - short_start) - 100000) < 5){
     FCShort_Start();
     purgeCount++;
    }
@@ -261,7 +267,7 @@ void updateShort(){
 
 void updatePurge()
 {
-  if(purgeCount % 3 == 0){
+  if(purgeCount % 6 == 0){
       start_Purge_delay = millis();
   }
   
