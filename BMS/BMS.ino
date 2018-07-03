@@ -56,7 +56,7 @@ MS5611 baro;
 
 void setup() {
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
-  //Wire.setDefaultTimeout(1000);
+  //Wire.setDefaultTimeout(100);
   INAinit();
 
   Serial.begin(115200);
@@ -115,6 +115,8 @@ void loop() {
 
   baro.poll();
   currentAlt = baro.getAlt() - startingAlt;
+
+  
   
   uint32_t curTime = millis();
   if(curTime < loopTime + 100)//if less than 100ms, start over
@@ -129,6 +131,10 @@ void loop() {
   updateThrottle(btn == 5);
 
   writeToBtSd();
+  Serial.println(readH2(I2C_READ_FCV));
+  Serial.println(readH2(I2C_READ_FCI));
+  Serial.println(readH2(I2C_READ_H2PRESS));
+  Serial.println(readH2(I2C_READ_H2FLOW));
 }
 
 void updateThrottle(uint8_t pressed)
