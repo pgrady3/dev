@@ -1,0 +1,37 @@
+% Shomik Verma
+% analyzedata.m
+% analyze fuel cell testing data
+
+clear; clf;
+%% import data
+
+data = importdata('supercaps_test.txt');
+flow = data(:,1);
+power = data(:,2);
+eff = data(:,3);
+health = data(:,4);
+voltage = data(:,5);
+current = data(:,6);
+leak = data(:,7);
+time = data(:,8);
+
+
+h2energy = flow/1000*119.96e3;
+effInt = trapz(time,power)/trapz(time,h2energy)*100;
+fprintf('overall eff: %.2f\n',effInt);
+effAvg = mean(eff)
+fprintf('avg eff: %.2f\n'
+
+%% plot data
+
+time = time - time(1);
+time = time/1000;
+
+figure(1);
+plot(time, voltage,...
+    time, power,...
+    time, eff);
+
+xlabel('Time (s)')
+legend('FC Voltage','FC Power','FC Efficiency','Location','NorthEast')
+axis([0 time(end) 0 100]);
