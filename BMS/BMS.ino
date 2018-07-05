@@ -144,23 +144,27 @@ void pollH2()
 void updateThrottle(uint8_t pressed)
 {
   static int debounce = 0;
-  if(pressed && debounce < 13)
+  if(pressed && debounce < 40)
     debounce++;
 
   if(!pressed && debounce > 0)
-    debounce--;
+    debounce -= 5;
+
+  if(debounce > 10)//debounce relay thresh
+    digitalWriteFast(RELAY, HIGH);
+  //else
+    //digitalWriteFast(RELAY, LOW);
   
-  if(debounce > 10)//debounce thresh
+  if(debounce > 30)//debounce throttle thresh
   {
     float errorCurrent = TARGET_CURRENT - InaCurrent;
-    throttle += errorCurrent * 0.012;
+    throttle += errorCurrent * 0.006;
 
     if(errorCurrent < -4)//failsafe
       throttle = 0;
   }
   else
     throttle = 0;
-
 
   //Write over I2C
   uint16_t rawThrottle = throttle * 65535;

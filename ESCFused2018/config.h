@@ -122,12 +122,6 @@ void setupPins()
   pinMode(ISENSE1, INPUT);
   pinMode(ISENSE2, INPUT);
 
-  // change the analog write frequency to 20 kHz
-  analogWriteFrequency(INHA, 20000 );
-  analogWriteFrequency(INHB, 20000 );
-  analogWriteFrequency(INHC, 20000 );
-  analogWriteResolution(10); // write from 0 to 2^10 = 1023
-
   Serial.begin(115200);
 
   digitalWriteFast(DRV_EN_GATE, LOW);

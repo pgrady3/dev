@@ -2,6 +2,7 @@
 #include "TimerOne.h"
 #include "SPI.h"
 #include "config.h"
+#include "pwm.h"
 
 uint8_t hallOrder[] = {255, 1, 3, 2, 5, 0, 4, 255}; //for maxwell motor
 #define HALL_SHIFT 2
@@ -24,10 +25,7 @@ volatile uint16_t throttle = 0;
 
 void setup(){
   setupPins();
-
-  analogWrite(INHA, 0);
-  analogWrite(INHB, 0);
-  analogWrite(INHC, 0);
+  PWMInit();
 
   attachInterrupt(HALL1, hallISR, CHANGE);
   attachInterrupt(HALL2, hallISR, CHANGE);
@@ -41,12 +39,12 @@ void hallISR()
   lastHallTime = millis();
   if(pos > 6)
   {
-    writeState(255);//error
+    PWMSetMotorPos(255);//error
     return;
   }
 
   pos = (pos + HALL_SHIFT) % 6;
-  writeState(pos);
+  PWMSetMotorPos(pos);
 }
 
 void loop(){
@@ -102,19 +100,19 @@ void loop(){
   
   if(curTime - lastLoopTime > 50)
   {
-    volatile uint16_t driverThrottle = getThrottle() * 1023;
+    volatile uint16_t driverThrottle = getThrottle() * 255;
     if(curTime - BMSMillis < 300)//less than 300ms since BMS update
     {
       //digitalWrite(LED2, HIGH);
       if(BMSThrottle == 0)
-        throttle = driverThrottle;
+        PWMSetDuty(driverThrottle);
       else
-        throttle = BMSThrottle / 16;//scale from full 16 bit to 12 bit
+        PWMSetDuty(BMSThrottle / 256);//scale from full 16 bit to 8 bit
     }
     else
     {
       //digitalWrite(LED2, LOW);
-      throttle = driverThrottle;
+      PWMSetDuty(driverThrottle);
     }
 
     if(curTime - lastHallTime > 100)
@@ -147,75 +145,4 @@ uint8_t getHalls()
     digitalWrite(LED1, LOW);
   
   return hall & 0x07;
-}
-
-// write the phase to the low side gates
-// 1-hot encoding for the phase
-// 001 = A, 010 = B, 100 = C
-void writeLow(uint8_t phase){
-  digitalWriteFast(INLA, (phase&(1<<0)));
-  digitalWriteFast(INLB, (phase&(1<<1)));
-  digitalWriteFast(INLC, (phase&(1<<2)));
-}
-
-
-void writeState(uint8_t pos)
-{
-  //Maybe this is necessary? Might solve some problems with bad handshaking?
-  //writeHigh(0);
-  //writeLow(0);
-
-  switch(pos){
-    case 0://LOW A, HIGH B
-      writeLow(0b001);
-      writeHigh(0b010);
-      break;
-    case 1://LOW A, HIGH C
-      writeLow(0b001);
-      writeHigh(0b100);
-      break;
-    case 2://LOW B, HIGH C
-      writeLow(0b010);
-      writeHigh(0b100);
-      break;
-    case 3://LOW B, HIGH A
-      writeLow(0b010);
-      writeHigh(0b001);
-      break;
-    case 4://LOW C, HIGH A
-      writeLow(0b100);
-      writeHigh(0b001);
-      break;
-    case 5://LOW C, HIGH B
-      writeLow(0b100);
-      writeHigh(0b010);
-      break;
-  }
-}
-
-// write the phase to the high side gates
-// 1-hot encoding for the phase
-// 001 = A, 010 = B, 100 = C
-void writeHigh(uint8_t phase){
-  switch(phase){
-  case 0b001: // Phase A
-    analogWrite(INHB, 0);
-    analogWrite(INHC, 0);
-    analogWrite(INHA, throttle);
-    break;
-  case 0b010: // Phase B
-    analogWrite(INHA, 0);
-    analogWrite(INHC, 0);
-    analogWrite(INHB, throttle);
-    break;
-  case 0b100:// Phase C
-    analogWrite(INHA, 0);
-    analogWrite(INHB, 0);
-    analogWrite(INHC, throttle);
-    break;
-  default://ALL OFF
-    analogWrite(INHA, 0);
-    analogWrite(INHB, 0);
-    analogWrite(INHC, 0);
-  }
 }
