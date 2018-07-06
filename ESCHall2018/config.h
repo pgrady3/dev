@@ -117,9 +117,9 @@ void setupPins()
   pinMode(ISENSE2, INPUT);
 
   // change the analog write frequency to 8 kHz
-  analogWriteFrequency(INHA, 8000);
-  analogWriteFrequency(INHB, 8000);
-  analogWriteFrequency(INHC, 8000);
+  analogWriteFrequency(INHA, 32000);
+  analogWriteFrequency(INHB, 32000);
+  analogWriteFrequency(INHC, 32000);
   analogWriteResolution(12); // write from 0 to 2^12 = 4095
 
   Serial.begin(115200);

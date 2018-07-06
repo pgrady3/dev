@@ -1,12 +1,13 @@
 clear; clc; close all;
 
-ACCEL_WINDOW = 50;
+ACCEL_WINDOW = 100;
 ROT_INERTIA = 0.8489;
 
 PARASITIC_LOSSES = [-0.000000174009895   0.000029033561439  -0.003222070361203  -0.030973207638652];%just air + bearing
 %PARASITIC_LOSSES = [-0.000000132005837   0.000026535670679  -0.004129207335037  -0.063561570528803];%air + bearing + chain + hysterisis
+PARASITIC_LOSSES = [-0.000000180290722   0.000029520905721  -0.003219018582889  -0.030440657319996];%fixed velocity
 
-filesStruct = dir('chain/*.txt');
+filesStruct = dir('16V/*.txt');
 
 for i = 1:numel(filesStruct)
     filename = filesStruct(i).name;
@@ -16,7 +17,7 @@ for i = 1:numel(filesStruct)
     
     voltage = data(:, 1);
     current = data(:, 2);
-    rpm = data(:, 4);
+    rpm = data(:, 4);% .* 53 ./ 54;
 
     for i = 1:length(rpm) - 2%fix glitches in rpm readout
        if (rpm(i) > 0) && (rpm(i+2) > 0) && (rpm(i+1) == 0)
@@ -62,7 +63,7 @@ end
 figure(1);
 legend(gca,'show');
 grid on;
-ylim([0.6, 1]);
+ylim([0.2, 1]);
 
 figure(2);
 legend(gca,'show');

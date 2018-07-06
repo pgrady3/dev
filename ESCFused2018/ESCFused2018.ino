@@ -9,7 +9,9 @@ uint8_t hallOrder[] = {255, 1, 3, 2, 5, 0, 4, 255}; //for maxwell motor
 #define HALL_SAMPLES 10
 
 uint32_t lastLoopTime = 0;
-volatile uint32_t lastHallTime = 0;
+volatile uint32_t lastHallTimeUs = 0;
+volatile uint32_t avgHallTimeUs = 0;
+volatile uint8_t lastHall = 0;
 
 #define LOG_SAMPLES 2000
 volatile uint16_t logI1[LOG_SAMPLES];
@@ -35,8 +37,19 @@ void setup(){
 void hallISR()
 {
   uint8_t hall = getHalls();
+  if(hall == lastHall)
+    return;
+
+  uint32_t us = micros();
+  uint32_t dt = us - lastHallTimeUs;
+
+  avgHallTimeUs += (int32_t)(dt - avgHallTimeUs) / 8;
+  int32_t diff = avgHallTimeUs - dt;
+
+  if(diff > 200 || diff < -200)
+    avgHallTimeUs = dt;
+  
   uint8_t pos = hallOrder[hall];
-  lastHallTime = millis();
   if(pos > 6)
   {
     PWMSetMotorPos(255);//error
@@ -44,36 +57,51 @@ void hallISR()
   }
 
   pos = (pos + HALL_SHIFT) % 6;
-  PWMSetMotorPos(pos);
+  //rotorAngle = hallAngle[pos];
+  
+  //PWMSetMotorPos(pos);
+  MotorSetVelo(avgHallTimeUs * 6);
+  MotorObserveHall(pos);
+
+  /*if(posI >= 0 && posI < LOG_SAMPLES)
+  {
+    logHall[posI] = pos; 
+    logI1[posI] = avgHallTimeUs;
+    logI2[posI] = dt;
+    logTime[posI++] = micros();    
+  }*/
+
+  lastHall = hall;
+  lastHallTimeUs = us;
 }
 
 void loop(){
-    
-  
   uint32_t curTime = millis();
 
-  uint16_t i1 = analogRead(ISENSE1);
+  /*uint16_t i1 = analogRead(ISENSE1);
   uint16_t i2 = analogRead(ISENSE2);
   uint16_t zcA = analogRead(ZC_A);
   uint16_t zcB = analogRead(ZC_B);
-  uint16_t zcC = analogRead(ZC_C);
+  uint16_t zcC = analogRead(ZC_C);*/
   uint8_t hP = hallOrder[getHalls()];
   uint32_t us = micros();
   
-  if(posI < 0 && throttle > 500)
+  if(posI < 0 && getThrottle() > 0.3)
     posI = 0;
 
-  if(posI >= 0 && posI < LOG_SAMPLES)
+  /*if(posI >= 0 && posI < LOG_SAMPLES)
   {
-    logHall[posI] = hP; 
+    logHall[posI] = motorComState; 
     logTime[posI] = us;
-    logZcA[posI] = zcA;
-    logZcB[posI] = zcB;
-    logZcC[posI] = zcC;
-    logI1[posI] = i1;
-    logI2[posI++] = i2;
-    
-  }
+    logZcA[posI] = rotorAngle;
+    logZcB[posI] = hallAngle;
+    //logZcA[posI] = zcA;
+    //logZcB[posI] = zcB;
+    //logZcC[posI] = zcC;
+    //logI1[posI] = i1;
+    //logI2[posI++] = i2;
+    posI++;
+  }*/
 
   if(posI == LOG_SAMPLES)
   {
@@ -103,7 +131,7 @@ void loop(){
     volatile uint16_t driverThrottle = getThrottle() * 255;
     if(curTime - BMSMillis < 300)//less than 300ms since BMS update
     {
-      //digitalWrite(LED2, HIGH);
+      
       if(BMSThrottle == 0)
         PWMSetDuty(driverThrottle);
       else
@@ -111,17 +139,18 @@ void loop(){
     }
     else
     {
-      //digitalWrite(LED2, LOW);
       PWMSetDuty(driverThrottle);
     }
 
-    if(curTime - lastHallTime > 100)
+    if(curTime - (lastHallTimeUs / 1000) > 100)
       hallISR();
     
     lastLoopTime = curTime;
   }
 
+  digitalWrite(LED1, LOW);
   delayMicroseconds(100);
+  digitalWrite(LED1, HIGH);
 }
 
 uint8_t getHalls()
