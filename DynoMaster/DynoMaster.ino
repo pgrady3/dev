@@ -197,11 +197,12 @@ uint16_t INAreadReg(uint8_t reg)
 
 void countHallPulse() {
   uint32_t currentMicros = micros();
-
+  uint32_t oldTime = tickTimes[tickPos];
+  
   tickTimes[tickPos++] = currentMicros;
   tickPos %= WHEEL_TICKS;
 
-  avgdT = currentMicros - tickTimes[tickPos];
+  avgdT = currentMicros - oldTime;
 
   distTicks++;
   

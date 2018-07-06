@@ -213,10 +213,12 @@ void updateSpeed()
 void countHallPulse() {
   uint32_t current = micros();
 
+  uint32_t prevTime = tickTimes[tickPos];// time 1 rev ago
+
   tickTimes[tickPos++] = current;
   tickPos %= WHEEL_TICKS;
 
-  avgdT = current - tickTimes[tickPos];
+  avgdT = current - prevTime;
 
   distTicks++;
   
