@@ -23,7 +23,7 @@
 #define WHEEL_TICKS 8
 #define TICK_DIST (WHEEL_CIRC / WHEEL_TICKS)
 
-#define TARGET_CURRENT 6
+#define TARGET_CURRENT 5
 
 volatile uint32_t tickTimes[WHEEL_TICKS];
 volatile uint32_t tickPos;
@@ -34,6 +34,8 @@ volatile uint32_t lastInaMeasurement = 0;
 volatile uint32_t countIntervals = 0;
 volatile int32_t avgdT = 1000000;
 volatile uint32_t distTicks = 0;
+
+uint32_t shortTime = 0;
 
 double energyUsed = 0.0;
 double distance = 0.0;
@@ -113,6 +115,7 @@ void loop() {
   //currentAlt = baro.getAlt() - startingAlt;
 
   uint32_t curTime = millis();
+ 
   if(curTime < loopTime + 100)//if less than 100ms, start over
     return;
   
@@ -123,9 +126,17 @@ void loop() {
   
   uint8_t btn = readBtn();
   updateThrottle(btn == 5);
+  updateH2Btn(btn);
 
   writeToBtSd();
 
+  if(InaCurrent > 15)
+  {
+    digitalWrite(RELAY, LOW);
+    shortTime = curTime;
+  }
+  else if(curTime - shortTime > 2000)
+    digitalWrite(RELAY, HIGH);
 }
 
 void pollH2()
@@ -175,6 +186,32 @@ void updateThrottle(uint8_t pressed)
   Wire.endTransmission();
 }
 
+void updateH2Btn(uint8_t btn)
+{
+  static uint32_t btnDuration = 0;
+  static uint32_t btnSelected = 0;
+
+  if(btn != btnSelected)
+  {
+    btnSelected = btn;
+    btnDuration = 0; 
+  }
+  else
+    btnDuration++;
+
+  if(btnSelected == 1 && btnDuration == 5)
+    writeH2(I2C_WRITE_PURGE, 0);
+
+  if(btnSelected == 2 && btnDuration == 5)
+    writeH2(I2C_WRITE_SHORT, 0);
+
+  if(btnSelected == 3 && btnDuration == 20)
+    writeH2(I2C_WRITE_CLOSESUPPLY, 0);
+
+  if(btnSelected == 4 && btnDuration == 5)
+    writeH2(I2C_WRITE_OPENSUPPLY, 0);
+}
+
 uint8_t readBtn()
 {
   uint16_t btnAnalog = analogRead(TEMP);
@@ -213,7 +250,7 @@ void updateSpeed()
 void countHallPulse() {
   uint32_t current = micros();
 
-  uint32_t prevTime = tickTimes[tickPos];// time 1 rev ago
+  uint32_t prevTime = tickTimes[tickPos];// time 1 rev ago. fixed 7/5/2018 :(
 
   tickTimes[tickPos++] = current;
   tickPos %= WHEEL_TICKS;
