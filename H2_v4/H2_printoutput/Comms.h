@@ -32,7 +32,7 @@ void i2cRequestEvent(void){
 void i2cReceiveEvent(size_t count) {
   if(count){
     lastCmd = Wire1.readByte();
-
+    
     if(lastCmd == I2C_READ_FCV)
       i2cmemStore((int32_t) (voltage*1000));
         
@@ -53,6 +53,18 @@ void i2cReceiveEvent(size_t count) {
 
     if(lastCmd == I2C_READ_H2TOT)
       i2cmemStore((int32_t) (massFlow[1]*10000));//10 thousand
+
+    if(lastCmd == I2C_WRITE_OPENSUPPLY)
+      digitalWrite(SUPPLY_VALVE, HIGH);
+
+    if(lastCmd == I2C_WRITE_CLOSESUPPLY)
+      digitalWrite(SUPPLY_VALVE, LOW);
+      
+    if(lastCmd == I2C_WRITE_SHORT)
+      FCShort_Start();
+      
+    if(lastCmd == I2C_WRITE_PURGE)
+      FCPurge_Start();
   }
 }
 
