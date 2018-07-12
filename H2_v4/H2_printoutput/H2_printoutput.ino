@@ -226,7 +226,9 @@ void printData(uint32_t cur){
   Serial.print(" ");
   Serial.print(totFCNRG,4);
   Serial.print(" ");
-  Serial.println(flowPres,4);
+  Serial.print(flowPres,4);
+  Serial.print(" ");
+  Serial.println(temp, 4);
 }
 
 void readInputs(){
@@ -239,6 +241,12 @@ void readInputs(){
         if(incomingByte=='s'){
           FCShort_Start();
           purgeCount++;
+        }
+        if(incomingByte=='b'){
+          for(uint8_t ind = 0; ind<(sizeof(Short_StartupIntervals)/sizeof(uint32_t)); ind++){
+            delay(Short_StartupIntervals[ind]);
+            FCShort(Short_StartupDurations[ind]);
+          }
         }
         if(incomingByte >= '0' && incomingByte <= '9'){
           float val = (incomingByte - '0') / 10.0;
@@ -259,7 +267,7 @@ void updateShort(){
 //  if(health < 0 && (millis() - short_start) > 10000 && voltage > 13.5 && voltage < 17){
 
 // timed short/purge
-   if(abs((millis() - short_start) - 100000) < 5){
+   if(abs((millis() - short_start) - 30000) < 5){
     FCShort_Start();
     purgeCount++;
    }
@@ -272,7 +280,7 @@ void updateShort(){
 void updatePurge()
 {
   if(purgeCount % 6 == 0){
-      start_Purge_delay = millis();
+      //start_Purge_delay = millis();
   }
   
   if(abs(millis() - start_Purge_delay - 5000) < 5){
