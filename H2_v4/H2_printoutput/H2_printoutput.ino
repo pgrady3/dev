@@ -18,7 +18,6 @@ float eff = 0;
 float flowcurrent = 0;
 float leak = 0;
 int purgeCount = 1;
-bool shorting = false;
 
 #define FLOWMETER_BUF_SIZE 100
 char flowmeterBuf[FLOWMETER_BUF_SIZE];
@@ -229,7 +228,7 @@ void readInputs(){
           FCPurge_Start();
         }
         if(incomingByte=='s'){
-          shorting = !shorting;
+          usingLoadShort = !usingLoadShort;
           //FCShort_Start();
           purgeCount++;
         }
@@ -258,7 +257,12 @@ void updateShort(){
 //  if(health < 0 && (millis() - short_start) > 10000 && voltage > 13.5 && voltage < 17){
 
 // timed short/purge
-   if(shorting && (millis() - short_start) > 10000){
+   if(usingLoadShort && BMSCurrent > 3 && (millis() - short_start > 10000)){
+    FCShort_Start();
+    purgeCount++;
+   }
+
+   if(!usingLoadShort && (millis() - short_start > 30000)){
     FCShort_Start();
     purgeCount++;
    }

@@ -13,6 +13,10 @@
 #define I2C_WRITE_OPENSUPPLY 0x53
 #define I2C_WRITE_SETFAN 0x54
 
+#define I2C_WRITE_REPORTCURRENT 0x55
+#define I2C_WRITE_LOADSHORT 0x56
+#define I2C_WRITE_TIMESHORT 0x57
+
 
 
 int32_t readH2(uint8_t reg);

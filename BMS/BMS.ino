@@ -211,11 +211,22 @@ void updateH2Btn(uint8_t btn)
   if(btnSelected == 2 && btnDuration == 5)
     writeH2(I2C_WRITE_SHORT, 0);
 
-  if(btnSelected == 3 && btnDuration == 20)
-    writeH2(I2C_WRITE_CLOSESUPPLY, 0);
+  if(btnSelected == 3 && btnDuration == 5)
+    writeH2(I2C_WRITE_LOADSHORT, 0);
 
   if(btnSelected == 4 && btnDuration == 5)
-    writeH2(I2C_WRITE_OPENSUPPLY, 0);
+    writeH2(I2C_WRITE_TIMESHORT, 0);
+
+
+  float clampedCurrent = InaCurrent * 10.0;
+
+  if(clampedCurrent > 200)
+    clampedCurrent = 200;
+
+  if(clampedCurrent < 0)
+    clampedCurrent = 0;
+    
+  writeH2(I2C_WRITE_REPORTCURRENT, (uint8_t)clampedCurrent);
 }
 
 uint8_t readBtn()

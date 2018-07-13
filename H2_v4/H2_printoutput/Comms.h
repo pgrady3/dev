@@ -15,6 +15,10 @@
 #define I2C_WRITE_OPENSUPPLY 0x53
 #define I2C_WRITE_SETFAN 0x54
 
+#define I2C_WRITE_REPORTCURRENT 0x55
+#define I2C_WRITE_LOADSHORT 0x56
+#define I2C_WRITE_TIMESHORT 0x57
+
 uint8_t lastCmd = 0;
 uint8_t i2cmem[4];
 
@@ -54,11 +58,11 @@ void i2cReceiveEvent(size_t count) {
     if(lastCmd == I2C_READ_H2TOT)
       i2cmemStore((int32_t) (massFlow[1]*10000));//10 thousand
 
-    if(lastCmd == I2C_WRITE_OPENSUPPLY)
+    /*if(lastCmd == I2C_WRITE_OPENSUPPLY)
       digitalWrite(SUPPLY_VALVE, HIGH);
 
     if(lastCmd == I2C_WRITE_CLOSESUPPLY)
-      digitalWrite(SUPPLY_VALVE, LOW);
+      digitalWrite(SUPPLY_VALVE, LOW);*/
       
     if(lastCmd == I2C_WRITE_SHORT){
       for(uint8_t ind = 0; ind<(sizeof(Short_StartupIntervals)/sizeof(uint32_t)); ind++){
@@ -69,6 +73,15 @@ void i2cReceiveEvent(size_t count) {
     
     if(lastCmd == I2C_WRITE_PURGE)
       FCPurge_Start();
+
+    if(lastCmd == I2C_WRITE_LOADSHORT)
+      usingLoadShort = true;
+
+    if(lastCmd == I2C_WRITE_TIMESHORT)
+      usingLoadShort = false;
+
+    while(Wire1.available())
+      Wire1.readByte();
   }
 }
 

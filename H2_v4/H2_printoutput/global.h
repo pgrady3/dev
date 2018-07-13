@@ -25,6 +25,9 @@ float totFCNRG = 0;
 float allEff = 0;
 float totH2NRG = 0;
 float flowPres = 0;
+float BMSCurrent = 0;
+
+bool usingLoadShort = true;
 
 
 float massFlow[2] = {0,0};
