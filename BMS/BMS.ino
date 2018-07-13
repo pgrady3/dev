@@ -58,6 +58,7 @@ double H2Tot = 0;
 double H2Eff = 0;
 
 bool batteryOK = true;
+uint8_t powerSaveVote = 0;
 uint32_t h2Detected = 0;
 
 File myFile;
@@ -130,12 +131,12 @@ void loop() {
 
   writeToBtSd();
 
-  if(InaCurrent > 15)
+  if(InaCurrent > 20 || powerSaveVote == 0)
   {
     digitalWrite(RELAY, LOW);
     shortTime = curTime;
   }
-  else if(curTime - shortTime > 2000)
+  else if(curTime - shortTime > 2000 && powerSaveVote > 0)
     digitalWrite(RELAY, HIGH);
 }
 
@@ -160,17 +161,22 @@ void updateThrottle(uint8_t pressed)
 
   if(!pressed && debounce > 0)
     debounce -= 5;
+  
+  if(debounce > 5)//debounce relay thresh
+    powerSaveVote = 1;
+  else
+    powerSaveVote = 1;
 
-  if(debounce > 10)//debounce relay thresh
-    digitalWriteFast(RELAY, HIGH);
-  //else
-    //digitalWriteFast(RELAY, LOW);
+  //Serial.println(debounce);
   
   if(debounce > 30)//debounce throttle thresh
   {
     float errorCurrent = TARGET_CURRENT - InaCurrent;
     throttle += errorCurrent * 0.006;
 
+    if(throttle > 1)
+      throttle = 1;
+    
     if(errorCurrent < -4)//failsafe
       throttle = 0;
   }

@@ -50,11 +50,11 @@ void hallISR()
   pos = (pos + HALL_SHIFT) % 6;
   writeState(pos);
 
-  if(posI >= 0 && posI < LOG_SAMPLES)
+  /*if(posI >= 0 && posI < LOG_SAMPLES)
   {
     logHall[posI] = pos; 
     logTime[posI++] = us;
-  }
+  }*/
 }
 
 void loop(){
@@ -95,8 +95,11 @@ void loop(){
     }
   }
   
-  if(curTime - lastLoopTime > 200)
+  if(curTime - lastLoopTime > 50)
   {
+    Serial.print(digitalRead(HALL1));
+    Serial.print(digitalRead(HALL2));
+    Serial.println(digitalRead(HALL3));
     volatile uint16_t driverThrottle = getThrottle() * 4095;
     if(curTime - BMSMillis < 300)//less than 300ms since BMS update
     {
