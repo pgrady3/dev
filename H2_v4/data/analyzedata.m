@@ -5,7 +5,7 @@
 clear; clf;
 %% import data
 
-data = importdata('resistor_outside.txt');
+data = importdata('load_shorting.txt');
 flow = data(:,1);
 power = data(:,2);
 eff = data(:,3);
@@ -14,6 +14,7 @@ voltage = data(:,5);
 current = data(:,6);
 leak = data(:,7);
 time = data(:,8);
+temp = data(:,13);
 
 
 h2energy = flow/1000*119.96e3;
@@ -50,3 +51,11 @@ figure(3); clf;
 plot(voltage, power,'.');
 xlabel('Voltage (V)')
 ylabel('Power (W)')
+
+figure(4); clf;
+scatter(current, voltage, 5, time)
+xlabel('Current')
+ylabel('Voltage')
+
+figure(5); clf;
+plot(time, temp)

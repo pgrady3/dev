@@ -18,20 +18,19 @@ float eff = 0;
 float flowcurrent = 0;
 float leak = 0;
 int purgeCount = 1;
+bool shorting = false;
 
 #define FLOWMETER_BUF_SIZE 100
 char flowmeterBuf[FLOWMETER_BUF_SIZE];
 uint32_t flowmeterBufPos = 0;
 
-const uint32_t Short_StartupIntervals[6] = {0, 616, 616, 616, 313, 313};
-const uint32_t Short_StartupDurations[6] = {50, 50, 50, 50, 100, 50};
-uint8_t Short_StartupIndex = 0;
+
 
 uint32_t Short_Intervals[1] = {100};
 const uint32_t Short_Durations[1] = {20};
 uint8_t Short_ind = 0;
 uint32_t Purge_Intervals[1] = {300};
-const uint32_t Purge_Durations[1] = {150};
+const uint32_t Purge_Durations[1] = {30};
 uint8_t Purge_ind = 0;
 
 //uint32_t Short_Interval = Short_Intervals[0]*1000;
@@ -118,16 +117,7 @@ void purge(int duration)
   digitalWrite(PURGE_VALVE,LOW);
 }
 
-void FCShort(uint32_t duration)
-{
-  digitalWrite(PASS, LOW);
-  delay(1);
-  digitalWrite(SHORT_CIRCUIT, HIGH);
-  delay(duration);
-  digitalWrite(SHORT_CIRCUIT, LOW);
-  delay(2);
-  digitalWrite(PASS, HIGH);
-}
+
 
 void getData(){
   
@@ -239,7 +229,8 @@ void readInputs(){
           FCPurge_Start();
         }
         if(incomingByte=='s'){
-          FCShort_Start();
+          shorting = !shorting;
+          //FCShort_Start();
           purgeCount++;
         }
         if(incomingByte=='b'){
@@ -267,7 +258,7 @@ void updateShort(){
 //  if(health < 0 && (millis() - short_start) > 10000 && voltage > 13.5 && voltage < 17){
 
 // timed short/purge
-   if(abs((millis() - short_start) - 30000) < 5){
+   if(shorting && (millis() - short_start) > 10000){
     FCShort_Start();
     purgeCount++;
    }
@@ -279,8 +270,8 @@ void updateShort(){
 
 void updatePurge()
 {
-  if(purgeCount % 6 == 0){
-      //start_Purge_delay = millis();
+  if(purgeCount % 10 == 0){
+      start_Purge_delay = millis();
   }
   
   if(abs(millis() - start_Purge_delay - 5000) < 5){

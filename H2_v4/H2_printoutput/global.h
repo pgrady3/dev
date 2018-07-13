@@ -29,9 +29,24 @@ float flowPres = 0;
 
 float massFlow[2] = {0,0};
 
+const uint32_t Short_StartupIntervals[6] = {0, 616, 616, 616, 313, 313};
+const uint32_t Short_StartupDurations[6] = {50, 50, 50, 50, 100, 50};
+uint8_t Short_StartupIndex = 0;
+
 int short_start = 999999999;
 int start_Purge_delay = 999999999;
 int start_Purge = 999999999;
+
+void FCShort(uint32_t duration)
+{
+  digitalWrite(PASS, LOW);
+  delay(1);
+  digitalWrite(SHORT_CIRCUIT, HIGH);
+  delay(duration);
+  digitalWrite(SHORT_CIRCUIT, LOW);
+  delay(2);
+  digitalWrite(PASS, HIGH);
+}
 
 
 void FCShort_Start()
