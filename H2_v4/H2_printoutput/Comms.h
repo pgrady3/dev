@@ -60,9 +60,13 @@ void i2cReceiveEvent(size_t count) {
     if(lastCmd == I2C_WRITE_CLOSESUPPLY)
       digitalWrite(SUPPLY_VALVE, LOW);
       
-    if(lastCmd == I2C_WRITE_SHORT)
-      FCShort_Start();
-      
+    if(lastCmd == I2C_WRITE_SHORT){
+      for(uint8_t ind = 0; ind<(sizeof(Short_StartupIntervals)/sizeof(uint32_t)); ind++){
+        delay(Short_StartupIntervals[ind]);
+        FCShort(Short_StartupDurations[ind]);
+      }
+    }
+    
     if(lastCmd == I2C_WRITE_PURGE)
       FCPurge_Start();
   }

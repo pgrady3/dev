@@ -5,7 +5,7 @@
 clear; clf;
 %% import data
 
-data = importdata('v_eff_test2.txt');
+data = importdata('load_shorting.txt');
 flow = data(:,1);
 power = data(:,2);
 eff = data(:,3);
@@ -14,6 +14,7 @@ voltage = data(:,5);
 current = data(:,6);
 leak = data(:,7);
 time = data(:,8);
+temp = data(:,13);
 
 
 h2energy = flow/1000*119.96e3;
@@ -28,7 +29,7 @@ time = time - time(1);
 time = time/1000;
 
 eff = smooth(eff, 20);
-figure(1);
+figure(1); clf;
 plot(time, voltage,...
     time, current,...    
     time, power,...
@@ -38,10 +39,23 @@ legend('FC Voltage','FC Current','FC Power','FC Efficiency','Location','NorthEas
 title('Fuel cell operation with supercaps')
 axis([0 time(end) 0 100]);
 
-figure(2);
+figure(2); clf;
 plot(voltage,eff,'.','MarkerSize',0.5);
 xlabel('Voltage')
 ylabel('Efficiency')
 % axis([ 0 60 0 100]);
 axis ([ 14.5 18 50 70]);
 title('Efficiency vs. voltage');
+
+figure(3); clf;
+plot(voltage, power,'.');
+xlabel('Voltage (V)')
+ylabel('Power (W)')
+
+figure(4); clf;
+scatter(current, voltage, 5, time)
+xlabel('Current')
+ylabel('Voltage')
+
+figure(5); clf;
+plot(time, temp)
