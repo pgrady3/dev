@@ -2,10 +2,10 @@
 % analyzedata.m
 % analyze fuel cell testing data
 
-clear; clf;
+clear;
 %% import data
 
-data = importdata('load_shorting.txt');
+data = importdata('simulated_lap2.txt');
 flow = data(:,1);
 power = data(:,2);
 eff = data(:,3);
@@ -15,6 +15,7 @@ current = data(:,6);
 leak = data(:,7);
 time = data(:,8);
 temp = data(:,13);
+pres = data(:,12);
 
 
 h2energy = flow/1000*119.96e3;
@@ -56,6 +57,14 @@ figure(4); clf;
 scatter(current, voltage, 5, time)
 xlabel('Current')
 ylabel('Voltage')
+colorbar
 
 figure(5); clf;
 plot(time, temp)
+xlabel('time')
+ylabel('temp')
+
+figure(6); clf;
+plot(time, pres);
+xlabel('time');
+ylabel('Pressure')
