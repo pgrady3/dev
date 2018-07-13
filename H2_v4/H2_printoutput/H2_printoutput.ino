@@ -19,6 +19,8 @@ float flowcurrent = 0;
 float leak = 0;
 int purgeCount = 1;
 
+bool shortFirst = false;
+
 #define FLOWMETER_BUF_SIZE 100
 char flowmeterBuf[FLOWMETER_BUF_SIZE];
 uint32_t flowmeterBufPos = 0;
@@ -217,7 +219,9 @@ void printData(uint32_t cur){
   Serial.print(" ");
   Serial.print(flowPres,4);
   Serial.print(" ");
-  Serial.println(temp, 4);
+  Serial.print(temp, 4);
+  Serial.print(" ");
+  Serial.println(BMSCurrent,4);
 }
 
 void readInputs(){
@@ -228,8 +232,8 @@ void readInputs(){
           FCPurge_Start();
         }
         if(incomingByte=='s'){
-          usingLoadShort = !usingLoadShort;
-          //FCShort_Start();
+          //usingLoadShort = !usingLoadShort;
+          FCShort_Start();
           purgeCount++;
         }
         if(incomingByte=='b'){
@@ -257,7 +261,19 @@ void updateShort(){
 //  if(health < 0 && (millis() - short_start) > 10000 && voltage > 13.5 && voltage < 17){
 
 // timed short/purge
-   if(usingLoadShort && BMSCurrent > 3 && (millis() - short_start > 10000)){
+   if(usingLoadShort && BMSCurrent > 3 && (millis() - short_start > 6000)){
+    FCShort_Start();
+    purgeCount++;
+    shortFirst = true;
+   }
+
+    if(usingLoadShort && BMSCurrent < 1 && shortFirst){
+      FCShort_Start();
+      purgeCount++;
+      shortFirst = false;
+   }
+    
+   if(usingLoadShort && BMSCurrent < 1 && (millis() - short_start > 60000)){
     FCShort_Start();
     purgeCount++;
    }
@@ -274,7 +290,7 @@ void updateShort(){
 
 void updatePurge()
 {
-  if(purgeCount % 10 == 0){
+  if(purgeCount % 15 == 0){
       start_Purge_delay = millis();
   }
   
