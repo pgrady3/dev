@@ -74,6 +74,11 @@ void i2cReceiveEvent(size_t count) {
     if(lastCmd == I2C_WRITE_PURGE)
       FCPurge_Start();
 
+    
+    if(lastCmd == I2C_WRITE_REPORTCURRENT && Wire1.available())
+      BMSCurrent = Wire1.readByte() / 10.0;
+    
+    
     if(lastCmd == I2C_WRITE_LOADSHORT)
       usingLoadShort = true;
 
