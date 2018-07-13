@@ -12,13 +12,10 @@ import java.util.Date;
 
 class DataObj {
     private static final String TAG = "DataObj";
-
-    String rawInput = "";
     String sessionName = "";
     String timeStamp = "";
     String longitude = "";
     String latitude = "";
-    String heading = "";
     int msSinceStart = 0;
     double voltage = 0.0;
     double current = 0.0;
@@ -26,13 +23,14 @@ class DataObj {
     double speed = 0.0;
     double mileage = 0.0;
     double energyUsed = 0.0;
-    double temperature = 0.0;
-    double batteryVoltage = 0.0;
-    double altitude = 0.0;
-
-
-    // True is OK. Let's pray we won't have false.
-    boolean batteryStatus = true;
+    double fuelCellVoltage = 0.0;
+    double fuelCellCurrent = 0.0;
+    double fuelCellEnergy = 0.0;
+    double fuelCellTemp = 0.0;
+    double h2Pressure = 0.0;
+    double h2Flow = 0.0;
+    double h2Total = 0.0;
+    double h2Efficiency = 0.0;
 
     DataObj(String input, String sessionName){
         try {
@@ -46,14 +44,17 @@ class DataObj {
             speed = Double.parseDouble(strings[3]);
             energyUsed = Double.parseDouble(strings[4]);
             mileage = Double.parseDouble(strings[5]);
-            temperature = Double.parseDouble(strings[6]);
-            int battery = Integer.parseInt(strings[7]);
-            batteryStatus = (battery == 1);
-            batteryVoltage = Double.parseDouble(strings[8]);
+            fuelCellVoltage = Double.parseDouble(strings[6]);
+            fuelCellCurrent = Double.parseDouble(strings[7]);
+            fuelCellEnergy = Double.parseDouble(strings[8]);
             msSinceStart = Integer.parseInt(strings[9]);
-            altitude = Double.parseDouble(strings[12]);
-
-            rawInput = input;
+            latitude = strings[10];
+            longitude = strings[11];
+            fuelCellTemp = Double.parseDouble(strings[12]);
+            h2Pressure = Double.parseDouble(strings[13]);
+            h2Flow = Double.parseDouble(strings[14]);
+            h2Total = Double.parseDouble(strings[15]);
+            h2Efficiency = Double.parseDouble(strings[16]);
         } catch (Exception e) {
             Log.e(TAG, "Conversion Error", e);
         }

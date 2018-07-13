@@ -13,6 +13,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.util.Locale;
+
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MAIN_UI";
@@ -24,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView timeView;
     private TextView current;
     private TextView energy;
-    private TextView altitude;
+    private TextView score;
     private Button button;
     private long lastPressTime = 0;
     private double lastPressEnergy = 0.0;
@@ -40,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             try {
                 while (!isInterrupted()) {
-                    Thread.sleep(300);
+                    Thread.sleep(250);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -78,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         power = (TextView) findViewById(R.id.power);
         voltage = (TextView) findViewById(R.id.voltage);
         current = (TextView) findViewById(R.id.current);
-        altitude = (TextView) findViewById(R.id.altitude);
+        score = (TextView) findViewById(R.id.score);
         timeView = (TextView) findViewById(R.id.timeView);
         energy = (TextView) findViewById(R.id.energyUsed);
 
@@ -88,8 +90,10 @@ public class MainActivity extends AppCompatActivity {
                 lastPressTime = System.currentTimeMillis();
                 if (isBound) {
                     DataObj obj = dataService.getMostRecent();
-                    lastPressDistance = obj.mileage;
-                    lastPressEnergy = obj.energyUsed;
+                    if (obj != null) {
+                        lastPressDistance = obj.mileage;
+                        lastPressEnergy = obj.energyUsed;
+                    }
                 }
             }
         });
@@ -144,25 +148,24 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateUi() {
         Log.i(TAG, "Trying to update UI");
-        String result = "";
         DataObj obj = null;
         if (isBound)
             obj = dataService.getMostRecent();
         if (obj != null) {
-            speed.setText(String.valueOf(obj.speed));
-            distance.setText(String.valueOf(obj.mileage - lastPressDistance));
-            power.setText(String.valueOf(obj.power));
-            voltage.setText(String.valueOf(obj.voltage));
-            current.setText(String.valueOf(obj.current));
+            speed.setText(String.format(Locale.US, "%.2f", obj.speed));
+            distance.setText(String.format(Locale.US, "%.2f", obj.mileage - lastPressDistance));
+            power.setText(String.format(Locale.US, "%.2f", obj.power));
+            voltage.setText(String.format(Locale.US, "%.2f", obj.fuelCellVoltage));
+            current.setText(String.format(Locale.US, "%.2f", obj.current));
 
             double miles = (obj.mileage - lastPressDistance) / 1609.34;
             double kwh = (obj.energyUsed - lastPressEnergy) / 3.6e6;
             double mipkwh = miles / kwh;
 
-            altitude.setText(String.valueOf(mipkwh));
-            energy.setText(String.valueOf(obj.energyUsed - lastPressEnergy));
+            score.setText(String.format(Locale.US, "%.2f", mipkwh));
+            energy.setText(String.format(Locale.US, "%.2f", obj.energyUsed - lastPressEnergy));
             if (lastPressTime == 0)
-                timeView.setText(String.valueOf(obj.msSinceStart / 1000.0));
+                timeView.setText(String.format(Locale.US, "%.2f", obj.msSinceStart / 1000.0));
             else
                 timeView.setText(String.valueOf((System.currentTimeMillis() - lastPressTime) / 1000));
         }
