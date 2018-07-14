@@ -119,6 +119,8 @@ void loop() {
  
   if(curTime < loopTime + 100)//if less than 100ms, start over
     return;
+
+  digitalWrite(LED2, !digitalRead(LED2));
   
   loopTime = curTime;
   updateINA();
