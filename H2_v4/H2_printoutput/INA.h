@@ -25,7 +25,7 @@ void INAinit()
 {
   Wire.beginTransmission(0x40);
   Wire.write(0x00);//reg select = 0x00
-  Wire.write(0b0111);//64 averages, 1ms voltage sampling
+  Wire.write(0b0011);//4 averages, 1ms voltage sampling
   Wire.write(0b100111);//1ms current sampling, free running
   Wire.endTransmission();
 }

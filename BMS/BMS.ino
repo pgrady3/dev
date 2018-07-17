@@ -56,6 +56,7 @@ double H2Press = 0;
 double H2Flow = 0;
 double H2Tot = 0;
 double H2Eff = 0;
+double H2AvgEff = 0;
 
 bool batteryOK = true;
 uint8_t powerSaveVote = 0;
@@ -151,7 +152,8 @@ void pollH2()
   H2Press = readH2(I2C_READ_H2PRESS) / 1000.0;
   H2Flow = readH2(I2C_READ_H2FLOW) / 1000.0;
   H2Tot = readH2(I2C_READ_H2TOT) / 10000.0;//10 thousand
-
+  H2AvgEff = readH2(I2C_READ_H2AVGEFF) / 1000.0;
+  
   H2Eff = FCV * FCI / mgtoJ(H2Flow);
 }
 
@@ -311,7 +313,7 @@ void writeToBtSd() {
   String outputStr = String(InaVoltage, 3) + " " + String(InaCurrent, 3) + " " + String(InaPower) + " "+ String(currentSpeed) + " " +
                      String(energyUsed) + " " + String(distance) + " " + String(FCV, 3) + " " + 
                      String(FCI, 3) + " "+ String(FCE, 1) +" " + String(millis()) + " " + String(GPS.latitudeDegrees, 7) + 
-                     " " + String(GPS.longitudeDegrees, 7) + " " + String(FCTemp, 1) + " " + String(H2Press, 1) + " " + String(H2Flow, 3) + " " + String(H2Tot, 4) + " " + String(H2Eff, 4);
+                     " " + String(GPS.longitudeDegrees, 7) + " " + String(FCTemp, 1) + " " + String(H2Press, 1) + " " + String(H2Flow, 3) + " " + String(H2Tot, 4) + " " + String(H2Eff, 4) + " " + String(H2AvgEff, 4);
   
   
   Serial.println(outputStr);//usb  

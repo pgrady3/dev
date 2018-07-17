@@ -1,5 +1,5 @@
 #define CURRENT_CAL 0.9795 //H2 BMS #1
-#define CURRENT_OFFSET 0.005;
+#define CURRENT_OFFSET 0.002;
 
 #warning "Make sure CURRENT_CAL is set!"
 

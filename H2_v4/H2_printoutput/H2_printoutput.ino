@@ -89,7 +89,9 @@ void loop() {
     printData(cur);
     readInputs();
   }
-  
+
+  calcPower();
+  calcAvgEff();
   updateShort();
   updatePurge();
   
@@ -120,21 +122,45 @@ void purge(int duration)
   digitalWrite(PURGE_VALVE,LOW);
 }
 
-
-
-void getData(){
+void calcPower()
+{
+  static uint32_t lastRun = millis();
+  uint32_t curRun = millis();
   
-  static uint32_t lastIntegrationMicros = micros();
-  uint32_t curMicros = micros();
-  
+  if(curRun - lastRun < 10)
+    return;
+
   // Fuel cell numbers
   voltage = INAvoltage();
   current = INAcurrent();
   power = voltage*current;
-  totFCNRG = totFCNRG + (power*(curMicros - lastIntegrationMicros))/1e6;
-  health = current - (voltage - setpoint)/(-0.75);  
-  lastIntegrationMicros = curMicros;
+  health = current - (voltage - setpoint)/(-0.75); 
+   
+  if(!currentlyShorting)
+    integrateEnergy(voltage, current);
+    
+  lastRun = curRun;
+}
+
+void calcAvgEff()
+{
+  static uint32_t lastRun = millis();
+  uint32_t curRun = millis();
   
+  if(curRun - lastRun < 500)
+    return;
+
+  effAvgEnergy[effAvgPos] = totFCNRG;
+  effAvgTotalFlow[effAvgPos++] = total;
+  effAvgPos %= EFF_AVG_SIZE;
+  
+  effAvg = (totFCNRG - effAvgEnergy[effAvgPos]) / ((total - effAvgTotalFlow[effAvgPos]) * 119.96e3);
+
+  lastRun = curRun;
+}
+
+void getData(){
+
   // fan
   fan_current = analogRead(FAN_READ) / 4096.0 * 3.3 / 0.20;
 
@@ -156,7 +182,6 @@ void getData(){
   leak = (flowcurrent - current)/flowcurrent*100;
 
   allEff = totFCNRG/totH2NRG*100;
-  
 }
 
 void readFlowmeter()
@@ -223,7 +248,9 @@ void printData(uint32_t cur){
   Serial.print(" ");
   Serial.print(temp, 4);
   Serial.print(" ");
-  Serial.println(BMSCurrent,4);
+  Serial.print(BMSCurrent, 4);
+  Serial.print(" ");
+  Serial.println(effAvg, 4);
   digitalWrite(LED1, LOW);
 }
 
@@ -270,7 +297,7 @@ void updateShort(){
     shortFirst = true;
    }
 
-    if(usingLoadShort && BMSCurrent < 1 && shortFirst){
+    if(usingLoadShort && BMSCurrent < 3 && shortFirst){
       FCShort_Start();
       purgeCount++;
       shortFirst = false;

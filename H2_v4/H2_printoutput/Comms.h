@@ -8,6 +8,7 @@
 #define I2C_READ_H2PRESS 0x14
 #define I2C_READ_H2FLOW  0x15
 #define I2C_READ_H2TOT 0x16
+#define I2C_READ_H2AVGEFF 0x17
 
 #define I2C_WRITE_PURGE 0x50
 #define I2C_WRITE_SHORT 0x51
@@ -57,6 +58,9 @@ void i2cReceiveEvent(size_t count) {
 
     if(lastCmd == I2C_READ_H2TOT)
       i2cmemStore((int32_t) (massFlow[1]*10000));//10 thousand
+
+    if(lastCmd == I2C_READ_H2AVGEFF)
+      i2cmemStore((int32_t) (effAvg * 1000));
 
     /*if(lastCmd == I2C_WRITE_OPENSUPPLY)
       digitalWrite(SUPPLY_VALVE, HIGH);
