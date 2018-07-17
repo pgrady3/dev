@@ -273,7 +273,7 @@ void updateShort(){
       shortFirst = false;
    }
     
-   if(usingLoadShort && BMSCurrent < 1 && (millis() - short_start > 60000)){
+   if(usingLoadShort && BMSCurrent < 1 && (millis() - short_start > 20000)){
     FCShort_Start();
     purgeCount++;
    }

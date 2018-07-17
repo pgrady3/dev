@@ -5,7 +5,8 @@
 clear;
 %% import data
 
-data = importdata('simulated_lap2.txt');
+data = importdata('v_eff_test.txt');
+% data = data(9388:10447, :);
 flow = data(:,1);
 power = data(:,2);
 eff = data(:,3);
@@ -14,8 +15,8 @@ voltage = data(:,5);
 current = data(:,6);
 leak = data(:,7);
 time = data(:,8);
-temp = data(:,13);
-pres = data(:,12);
+% temp = data(:,13);
+% pres = data(:,12);
 
 
 h2energy = flow/1000*119.96e3;
@@ -23,6 +24,13 @@ effInt = trapz(time,power)/trapz(time,h2energy)*100;
 fprintf('overall eff: %.2f\n',effInt);
 effAvg = mean(eff);
 fprintf('avg eff: %.2f\n',effAvg);
+
+% IV curve data
+p1 =  0;
+p2 = 0.1919;
+p3 =  -1.5202;
+p4 = 17.4026;
+fit_V = @(I) p1.*I.^3 + p2.*I.^2 + p3.*I + p4;
 
 %% plot data
 
@@ -54,7 +62,10 @@ xlabel('Voltage (V)')
 ylabel('Power (W)')
 
 figure(4); clf;
-scatter(current, voltage, 5, time)
+placehold = zeros(size(current,1),1);
+scatter3(current, voltage,time, 5, time); hold on
+% scatter3(current, fit_V(current), placehold, 5, placehold)
+view([0 90])
 xlabel('Current')
 ylabel('Voltage')
 colorbar
