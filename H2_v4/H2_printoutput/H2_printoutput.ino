@@ -64,7 +64,7 @@ void setup() {
   pinMode(SHORT_CIRCUIT, OUTPUT);
   digitalWrite(SHORT_CIRCUIT, LOW);
   pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  digitalWrite(BUZZER, HIGH);
   pinMode(SUPPLY_VALVE, OUTPUT);
   digitalWrite(SUPPLY_VALVE, HIGH);
   pinMode(PURGE_VALVE, OUTPUT);
@@ -92,6 +92,8 @@ void loop() {
   
   updateShort();
   updatePurge();
+  
+  digitalWrite(BUZZER, LOW);
 }
 
 void bootup(){
@@ -194,7 +196,7 @@ void readFlowmeter()
 }
 
 void printData(uint32_t cur){
-
+  digitalWrite(LED1, HIGH);
   Serial.print(flow,4);
   Serial.print(" ");
   Serial.print(power,4);
@@ -222,6 +224,7 @@ void printData(uint32_t cur){
   Serial.print(temp, 4);
   Serial.print(" ");
   Serial.println(BMSCurrent,4);
+  digitalWrite(LED1, LOW);
 }
 
 void readInputs(){

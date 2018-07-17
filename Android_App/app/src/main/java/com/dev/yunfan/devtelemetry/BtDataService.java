@@ -17,12 +17,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
 
 
 public class BtDataService extends Service {
@@ -30,7 +27,6 @@ public class BtDataService extends Service {
     private static BluetoothAdapter btAdapter;
     private static BluetoothSocket btSocket;
     private static final UUID MY_UUID = UUID.randomUUID();
-    private LinkedBlockingQueue<DataObj> dataCache = new LinkedBlockingQueue<>(10000);
     private String sessionName = "default";
     private DataObj mostUpToDate;
     private final Binder binder = new LocalBinder();
@@ -58,8 +54,6 @@ public class BtDataService extends Service {
         connect();
         BtConnectionThread btComm = new BtConnectionThread();
         btComm.start();
-        HttpRequestThread httpRequest = new HttpRequestThread();
-        httpRequest.start();
     }
 
     @Override
@@ -183,7 +177,6 @@ public class BtDataService extends Service {
                     result = btReader.readLine();
                     Log.i(TAG, result);
                     DataObj newData = new DataObj(result, sessionName);
-                    dataCache.add(newData);
                     mostUpToDate = newData;
                     myRef.push().setValue(newData);
                 } catch (IOException e) {
@@ -202,60 +195,6 @@ public class BtDataService extends Service {
                 outStream.write(buffer);
             } catch (IOException e) {
                 Log.e(TAG, "Exception during write", e);
-            }
-        }
-    }
-
-    private class HttpRequestThread extends Thread {
-        private URL url;
-        private HttpURLConnection httpConnection;
-
-        HttpRequestThread() {
-            Log.e(TAG, "Trying to create HttpRequest Thread");
-            try {
-                url = new URL("http://yunfan.colab.duke.edu:5000/upload/");
-            } catch (java.net.MalformedURLException e) {
-                Log.e(TAG, "URL is wrong!");
-            }
-        }
-
-        @Override
-        public void run() {
-            while (!isInterrupted()) {
-                try {
-                    if (!dataCache.isEmpty()) {
-                        DataObj dataObj = dataCache.peek();
-                        sendRequest(dataObj);
-                        Log.e(TAG, "HTTP POST Success!");
-                        dataCache.remove(dataObj);
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "HTTP failed", e);
-                }
-                try {
-                    sleep(10);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Cannot go to sleep.");
-                }
-            }
-        }
-
-        private void sendRequest(DataObj obj) throws Exception {
-            String body = obj.toString();
-            httpConnection = (HttpURLConnection) url.openConnection();
-            httpConnection.setRequestMethod("POST");
-            httpConnection.setRequestProperty("Content-Type", "application/json");
-            httpConnection.setConnectTimeout(1500);
-            httpConnection.setReadTimeout(1000);
-            httpConnection.setDoOutput(true);
-            httpConnection.setDoInput(true);
-            httpConnection.setRequestProperty("Content-Length", "" + body.length());
-            httpConnection.getOutputStream().write(body.getBytes("UTF-8"));
-            if (httpConnection.getResponseCode() != 200) {
-                Log.e(TAG, "" + httpConnection.getResponseCode());
-                throw new IOException("Connection failed" + httpConnection.getResponseCode());
-            } else {
-                Log.i(TAG, "HTTP Success");
             }
         }
     }
