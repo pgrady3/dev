@@ -67,6 +67,8 @@ Adafruit_GPS GPS(&Serial1);
 //MS5611 baro;
 
 void setup() {
+  setupWatchdog();
+  
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
   //Wire.setDefaultTimeout(100);//this makes i2c not work?
   INAinit();
@@ -86,44 +88,34 @@ void setup() {
   pinMode(RELAY, OUTPUT);
   pinMode(SOLENOID, OUTPUT);
   pinMode(TEMP, INPUT);
-  digitalWrite(RELAY, HIGH);
+  digitalWrite(RELAY, LOW);
   digitalWrite(SOLENOID, HIGH);
 
   digitalWrite(LED1, HIGH);
   digitalWrite(LED2, HIGH);
 
   pinMode(HALL, INPUT_PULLUP);
-
   attachInterrupt(HALL, countHallPulse, FALLING);
 
-  //baro.init(0x76);
   myFile = SD.open("data.txt", FILE_WRITE);
 
   GPSInit();
 
-  /*for(uint32_t i = 0; i < 2000; i++)//let the baro initialize
-  {
-    baro.poll();
-    delay(1);
-  }
-  startingAlt = baro.getAlt();*/
-  
+  kickDog();
 }
 
+
 void loop() {  
-  GPSPoll();
-
-  //baro.poll();
-  //currentAlt = baro.getAlt() - startingAlt;
-
+  GPSPoll();//must be called rapidly
+  
   uint32_t curTime = millis();
- 
   if(curTime < loopTime + 100)//if less than 100ms, start over
     return;
 
+  kickDog();//reset watchdog. sometimes i2c causes the processor to hang
   digitalWrite(LED2, !digitalRead(LED2));
-  
   loopTime = curTime;
+
   updateINA();
   updateSpeed();
   pollH2();
@@ -169,7 +161,7 @@ void updateThrottle(uint8_t pressed)
   if(debounce > 5)//debounce relay thresh
     powerSaveVote = 1;
   else
-    powerSaveVote = 1;
+    powerSaveVote = 0;//if this is 0, the relay will turn off when not using cruise control
 
   //Serial.println(debounce);
   
@@ -325,3 +317,38 @@ void writeToBtSd() {
 
   //Serial.println(micros() - startMicros);
 }
+
+
+void kickDog()
+{
+  noInterrupts();
+  WDOG_REFRESH = 0xA602;
+  WDOG_REFRESH = 0xB480;
+  interrupts();
+}
+
+void setupWatchdog()
+{
+  kickDog();
+  
+  noInterrupts();                                         // don't allow interrupts while setting up WDOG
+  WDOG_UNLOCK = WDOG_UNLOCK_SEQ1;                         // unlock access to WDOG registers
+  WDOG_UNLOCK = WDOG_UNLOCK_SEQ2;
+  delayMicroseconds(1);                                   // Need to wait a bit..
+  
+  // about 2-3 second timeout
+  WDOG_TOVALH = 0x0150;
+  WDOG_TOVALL = 0x0000;
+  
+  // This sets prescale clock so that the watchdog timer ticks at 7.2MHz
+  WDOG_PRESC  = 0x400;
+  
+  // Set options to enable WDT. You must always do this as a SINGLE write to WDOG_CTRLH
+  WDOG_STCTRLH |= WDOG_STCTRLH_ALLOWUPDATE |
+      WDOG_STCTRLH_WDOGEN | WDOG_STCTRLH_WAITEN |
+      WDOG_STCTRLH_STOPEN | WDOG_STCTRLH_CLKSRC;
+  interrupts();
+
+  kickDog();
+}
+

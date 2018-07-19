@@ -112,7 +112,7 @@ def getSeconds(startTime):
 def main():
     lapData = readCSV()
 
-    port        = "23"
+    port        = "24"
     baudrate    = "38400"
 
     load = dcload.DCLoad()
