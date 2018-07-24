@@ -2,40 +2,50 @@
 % analyzedata.m
 % analyze fuel cell testing data
 
-clear;
+clear; close all;
 %% import data
 
-data = importdata('v_eff_test.txt');
+data = importdata('simulated_lap_galot4.txt');
+data2 = importdata('base_IV.txt');
 % data = data(9388:10447, :);
+data2 = data2(1:3930, :);
 flow = data(:,1);
 power = data(:,2);
 eff = data(:,3);
 health = data(:,4);
 voltage = data(:,5);
 current = data(:,6);
+baseI = data2(:,6);
+baseV = data2(:,5);
+baseT = data2(:,8);
 leak = data(:,7);
 time = data(:,8);
-% temp = data(:,13);
-% pres = data(:,12);
+total = data(:,9);
+temp = data(:,13);
+pres = data(:,12);
 
 
-h2energy = flow/1000*119.96e3;
-effInt = trapz(time,power)/trapz(time,h2energy)*100;
-fprintf('overall eff: %.2f\n',effInt);
+h2energy = total*119.96e6;
+effInt = cumtrapz(time,power)./(h2energy - h2energy(1))*100;
+fprintf('overall eff: %.2f\n',effInt(end));
 effAvg = mean(eff);
 fprintf('avg eff: %.2f\n',effAvg);
 
 % IV curve data
-p1 =  0;
-p2 = 0.1919;
-p3 =  -1.5202;
-p4 = 17.4026;
-fit_V = @(I) p1.*I.^3 + p2.*I.^2 + p3.*I + p4;
+p1 =    -0.0335;
+p2 =     0.4112;
+p3 =    -1.9282;
+p4 =     4.3558;
+p5 =    -5.3833;
+p6 =    18.3366;
+fit_V = @(I) p1.*I.^5 + p2.*I.^4 + p3.*I.^3 + p4.*I.^2 + p5.*I + p6;
 
 %% plot data
 
 time = time - time(1);
 time = time/1000;
+baseT = baseT - baseT(1);
+baseT = baseT/1000;
 
 eff = smooth(eff, 20);
 figure(1); clf;
@@ -46,7 +56,7 @@ plot(time, voltage,...
 xlabel('Time (s)')
 legend('FC Voltage','FC Current','FC Power','FC Efficiency','Location','NorthEast')
 title('Fuel cell operation with supercaps')
-axis([0 time(end) 0 100]);
+axis([0 time(end-1) 0 100]);
 
 figure(2); clf;
 plot(voltage,eff,'.','MarkerSize',0.5);
@@ -64,6 +74,7 @@ ylabel('Power (W)')
 figure(4); clf;
 placehold = zeros(size(current,1),1);
 scatter3(current, voltage,time, 5, time); hold on
+scatter3(baseI, baseV, baseT, 5, baseT);
 % scatter3(current, fit_V(current), placehold, 5, placehold)
 view([0 90])
 xlabel('Current')
@@ -79,3 +90,13 @@ figure(6); clf;
 plot(time, pres);
 xlabel('time');
 ylabel('Pressure')
+
+figure(7); clf;
+plot(time, effInt);
+hold on;
+plot(time, eff);
+xlabel('time')
+ylabel('eff')
+
+% figure(8); clf;
+% plot(power, eff);
