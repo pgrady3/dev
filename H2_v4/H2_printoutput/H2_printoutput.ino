@@ -166,7 +166,7 @@ void getData(){
 
   // thermistor reading
   prct = analogRead(THERM)/4096.0;
-  temp = ((20 + (prct/(1-prct)*1208 - 1076)/3.8) * 9/5 + 32);
+  temp = .95*temp + .05*((20 + (prct/(1-prct)*1208 - 1076)/3.8) * 9/5 + 32);
   
   // flowmeter reading
 //  mass = massFlow;
@@ -291,19 +291,19 @@ void updateShort(){
 //  if(health < 0 && (millis() - short_start) > 10000 && voltage > 13.5 && voltage < 17){
 
 // timed short/purge
-   if(usingLoadShort && BMSCurrent > 3 && (millis() - short_start > 6000)){
+   if(usingLoadShort && BMSCurrent > 1 && (millis() - short_start > 20000)){
     FCShort_Start();
     purgeCount++;
     shortFirst = true;
    }
 
-    if(usingLoadShort && BMSCurrent < 3 && shortFirst){
+    if(usingLoadShort && BMSCurrent < 1 && shortFirst){
       FCShort_Start();
       purgeCount++;
       shortFirst = false;
    }
     
-   if(usingLoadShort && BMSCurrent < 3 && (millis() - short_start > 20000)){
+   if(usingLoadShort && BMSCurrent < 1 && (millis() - short_start > 90000)){
     FCShort_Start();
     purgeCount++;
    }
@@ -321,11 +321,11 @@ void updateShort(){
 void updatePurge()
 {
   if(purgeCount % 15 == 0){
-      start_Purge_delay = millis();
+      //start_Purge_delay = millis();
   }
   
   if(abs(millis() - start_Purge_delay - 5000) < 5){
-    FCPurge_Start();
+    //FCPurge_Start();
    }
 
    if(millis() - start_Purge >= Purge_Duration){
