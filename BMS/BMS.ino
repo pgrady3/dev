@@ -337,7 +337,7 @@ void setupWatchdog()
   delayMicroseconds(1);                                   // Need to wait a bit..
   
   // about 2-3 second timeout
-  WDOG_TOVALH = 0x0150;
+  WDOG_TOVALH = 0x0550;
   WDOG_TOVALL = 0x0000;
   
   // This sets prescale clock so that the watchdog timer ticks at 7.2MHz
