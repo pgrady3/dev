@@ -2,11 +2,14 @@
 % analyzedata.m
 % analyze fuel cell testing data
 
-clear; close all;
+clear; 
 %% import data
 
-data = importdata('simulated_lap_galot4.txt');
+data = importdata('load_shorting.txt');
 data2 = importdata('base_IV.txt');
+% power = data(:,2);
+% saveIndex = (power<30 & power>15);
+% data = data(saveIndex,:);
 % data = data(9388:10447, :);
 data2 = data2(1:3930, :);
 flow = data(:,1);
@@ -26,7 +29,8 @@ pres = data(:,12);
 
 
 h2energy = total*119.96e6;
-effInt = cumtrapz(time,power)./(h2energy - h2energy(1))*100;
+% effInt = cumtrapz(time,power)./(h2energy - h2energy(1))*100;
+effInt = cumtrapz(time,power)./(cumtrapz(time, flow*119.96))*100;
 fprintf('overall eff: %.2f\n',effInt(end));
 effAvg = mean(eff);
 fprintf('avg eff: %.2f\n',effAvg);
@@ -58,28 +62,40 @@ legend('FC Voltage','FC Current','FC Power','FC Efficiency','Location','NorthEas
 title('Fuel cell operation with supercaps')
 axis([0 time(end-1) 0 100]);
 
-figure(2); clf;
-plot(voltage,eff,'.','MarkerSize',0.5);
-xlabel('Voltage')
-ylabel('Efficiency')
+figure(2); hold on
+plot(power,eff,'.','MarkerSize',0.5);
+xlabel('power (W)')
+ylabel('Efficiency (%)')
 % axis([ 0 60 0 100]);
-axis ([ 14.5 18 50 70]);
-title('Efficiency vs. voltage');
+% axis ([ 14.5 18 50 70]);
+title('Fuel cell efficiency vs. power for various short frequencies');
+% legend('10ms','15ms','20ms','Location','SouthEast')
+
+print -dpng /Users/shomikverma/Documents1/Duke/EV/publication_plots/p_eff_shorting_freq
 
 figure(3); clf;
 plot(voltage, power,'.');
 xlabel('Voltage (V)')
 ylabel('Power (W)')
 
-figure(4); clf;
+figure(4);
 placehold = zeros(size(current,1),1);
 scatter3(current, voltage,time, 5, time); hold on
-scatter3(baseI, baseV, baseT, 5, baseT);
+% scatter3(baseI, baseV, baseT, 5, baseT);
+plot3(baseI, baseV, baseT,'k.')
 % scatter3(current, fit_V(current), placehold, 5, placehold)
 view([0 90])
 xlabel('Current')
 ylabel('Voltage')
-colorbar
+% axis([0 4.5 14.25 17])
+c = colorbar;
+ylabel(c, 'Time (s)')
+title('IV curve for direct connection')
+grad = gradient(current);
+short_help = sum(grad(grad>0.05))/sum(grad>0.05);
+% fprintf('short help: %f\n',short_help);
+
+print -dpng /Users/shomikverma/Documents1/Duke/EV/publication_plots/fast_discharge
 
 figure(5); clf;
 plot(time, temp)

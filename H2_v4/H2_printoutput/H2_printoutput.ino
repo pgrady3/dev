@@ -292,25 +292,25 @@ void updateShort(){
 
 // timed short/purge
    if(usingLoadShort && BMSCurrent > 1 && (millis() - short_start > 20000)){
-    FCShort_Start();
-    purgeCount++;
-    shortFirst = true;
+//    FCShort_Start();
+//    purgeCount++;
+//    shortFirst = true;
    }
 
     if(usingLoadShort && BMSCurrent < 1 && shortFirst){
-      FCShort_Start();
-      purgeCount++;
-      shortFirst = false;
+//      FCShort_Start();
+//      purgeCount++;
+//      shortFirst = false;
    }
     
    if(usingLoadShort && BMSCurrent < 1 && (millis() - short_start > 90000)){
-    FCShort_Start();
-    purgeCount++;
+//    FCShort_Start();
+//    purgeCount++;
    }
 
    if(!usingLoadShort && (millis() - short_start > 30000)){
-    FCShort_Start();
-    purgeCount++;
+//    FCShort_Start();
+//    purgeCount++;
    }
    
    if(millis() - short_start >= Short_Duration){

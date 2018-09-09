@@ -1,6 +1,6 @@
-clear; clc; close all;
+clear; close all;
 
-FILENAME = 'DATA.txt';
+FILENAME = 'run3.txt';
 data = importdata(FILENAME);
 
 % baseIVname = 'base_IV.txt';
@@ -22,6 +22,7 @@ p6 =    18.3366;
 fit_V = @(I) p1.*I.^5 + p2.*I.^4 + p3.*I.^3 + p4.*I.^2 + p5.*I + p6;
 
 % data = data(9228:26080, :); % middle school test
+data = data(3849:28000,:);
 % vFC = data(:, 7);
 % data = data(gradient(vFC)<0, :);
 
@@ -29,6 +30,7 @@ c = 200;
 
 vBMS = data(:, 1);
 iBMS = data(:, 2);
+velo = data(:,4);
 eBMS = data(:, 5);
 vFC = data(:, 7);
 iFC = data(:, 8);
@@ -39,7 +41,8 @@ pressFC = data(:, 14);
 flow = data(:, 15);
 totalFlow = data(:, 16);
 instantEff = data(:, 17);
-avgEff = data(:, 18);
+% avgEff = data(:, 18);
+avgEff = zeros(size(instantEff));
 
 % IV curve data
 p1 =    -0.0335;
