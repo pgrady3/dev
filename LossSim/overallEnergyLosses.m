@@ -101,6 +101,7 @@ H = pie(totalLosses);
 T = H(strcmpi(get(H,'Type'),'text'));
 P = cell2mat(get(T,'Position'));
 set(T,{'Position'},num2cell(P*0.6,2));
+P(1, 1) = -1.7;%hack to make text better
 text(P(:,1),P(:,2),totalLossesLabels(:));
 
 %fuel cell-----------------------------------------------
