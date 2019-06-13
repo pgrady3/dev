@@ -3,11 +3,11 @@ clear; clc; close all;
 %all loss terms are in watts
 
 v = 6.706; %nominal race speed in m/s
-massCar = 26; %mass of car in kg
-massDriver = 45; %mass of driver in kg
+massCar = 21; %mass of car in kg
+massDriver = 50; %mass of driver in kg
 g = 9.807; %acceleration of gravity
-kc = 0.8e-2; %constant wheel drag term
-kq = 1.2e-5; %quadratic wheel drag term
+kc = 4.9e-3; %constant wheel drag term
+kq = 9e-6; %quadratic wheel drag term
 d_wheel = 0.475; %diameter of the wheel in m
 
 massTotal = massCar + massDriver;
@@ -16,11 +16,10 @@ totalLosses = [];
 totalLossesLabels = {};
 
 %air drag------------------------------------------------
-airCD = 0.13; %coefficient of drag
-airFrontal = 0.353; %frontal area in m^2
+airCDA = 0.033; %coefficient of drag area
 airDensity = 1.184; %density of air at 25C and standard pressure, kg/m^3
 
-airForce = 0.5 * airCD * airDensity * airFrontal * v^2;
+airForce = 0.5 * airDensity * airCDA * v^2;
 airPower = airForce * v;
 
 totalLosses = [totalLosses, airPower];
@@ -42,8 +41,8 @@ totalLossesLabels{end+1} = 'Tire rolling resistance';
 
 %cornering losses----------------------------------------
 ca = 100; %tire cornering stiffness, newtons per degree
-cornerRadius = [25 25 25 25]; %turn radius in meters. assuming each corner turns 90 degrees
-cornerVelocity = [v v v v]; %speed taken through each corner
+cornerRadius = [30 30 30 30]; %turn radius in meters. assuming each corner turns 90 degrees
+cornerVelocity = [7.1 7 6.8 5.4]; %speed taken through each corner
 trackLength = 1947.1; %track length in meters. Galot raceway in Benson, NC
 
 alpha = (massTotal .* cornerVelocity.^2 ./ cornerRadius) ./ ca; %tire slip angle, degrees
