@@ -27,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView current;
     private TextView energy;
     private TextView score;
+    private TextView curDemand;
+    private TextView avgV;
     private Button button;
     private long lastPressTime = 0;
     private double lastPressEnergy = 0.0;
@@ -83,6 +85,8 @@ public class MainActivity extends AppCompatActivity {
         score = (TextView) findViewById(R.id.score);
         timeView = (TextView) findViewById(R.id.timeView);
         energy = (TextView) findViewById(R.id.energyUsed);
+        curDemand = (TextView) findViewById(R.id.curDemand);
+        avgV = (TextView) findViewById(R.id.avgV);
 
         button = (Button) findViewById(R.id.startButton);
         button.setOnClickListener(new View.OnClickListener() {
@@ -155,15 +159,23 @@ public class MainActivity extends AppCompatActivity {
             speed.setText(String.format(Locale.US, "%.2f", obj.speed));
             distance.setText(String.format(Locale.US, "%.2f", obj.mileage - lastPressDistance));
             power.setText(String.format(Locale.US, "%.2f", obj.power));
-            voltage.setText(String.format(Locale.US, "%.2f", obj.fuelCellVoltage));
+            voltage.setText(String.format(Locale.US, "%.2f", obj.voltage));
             current.setText(String.format(Locale.US, "%.2f", obj.current));
+            curDemand.setText(String.format(Locale.US, "%.2f", obj.currentDemand));
 
             double miles = (obj.mileage - lastPressDistance) / 1609.34;
             double kwh = (obj.energyUsed - lastPressEnergy) / 3.6e6;
             double mipkwh = miles / kwh;
 
             score.setText(String.format(Locale.US, "%.2f", mipkwh));
-            energy.setText(String.format(Locale.US, "%.2f", obj.energyUsed - lastPressEnergy));
+
+            //double avgPower = (obj.energyUsed - lastPressEnergy) / (System.currentTimeMillis() - lastPressTime);
+            double avgSpeed = (obj.mileage - lastPressDistance) / ((System.currentTimeMillis() - lastPressTime) / 1000.0);
+
+            energy.setText(String.format(Locale.US, "%.0f", obj.energyUsed - lastPressEnergy));
+            //energy.setText(String.format(Locale.US, "%.2f", avgPower));
+            avgV.setText(String.format(Locale.US, "%.2f", avgSpeed));
+
             if (lastPressTime == 0)
                 timeView.setText(String.format(Locale.US, "%.2f", obj.msSinceStart / 1000.0));
             else

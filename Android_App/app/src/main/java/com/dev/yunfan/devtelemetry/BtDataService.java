@@ -81,8 +81,8 @@ public class BtDataService extends Service {
         BluetoothDevice btDevice = null;
 
         for (BluetoothDevice device : devices) {
-            //Log.e(TAG, device.getName());
-            if (device.getName().contains("HC")) {
+            Log.e(TAG, device.getName());
+            if (device.getName().contains("HC") || device.getName().contains("BT1")) {
                 btDevice = device;
                 break;
             }
