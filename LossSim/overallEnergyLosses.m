@@ -1,4 +1,4 @@
-clear; clc; close all;
+clear; close all; %clc; 
 
 %all loss terms are in watts
 
@@ -32,7 +32,7 @@ totalLossesLabels{end+1} = 'External air drag';
 % totalLossesLabels{end+1} = 'Drag RMS loss';
 
 %rolling resistance--------------------------------------
-rrCoeff = 0.0015; %coefficient of rolling resistance
+rrCoeff = 0.0015 * 100/100; %coefficient of rolling resistance
 rrForce = massTotal * g * rrCoeff; %drag force of rolling resistance in newtons
 rrPower = rrForce * v; %power loss of rolling resistance in watts
 
@@ -42,7 +42,7 @@ totalLossesLabels{end+1} = 'Tire rolling resistance';
 %cornering losses----------------------------------------
 ca = 100; %tire cornering stiffness, newtons per degree
 cornerRadius = [30 30 30 30]; %turn radius in meters. assuming each corner turns 90 degrees
-cornerVelocity = [7.1 7 6.8 5.4]; %speed taken through each corner
+cornerVelocity = [v v v v]; %speed taken through each corner
 trackLength = 1947.1; %track length in meters. Galot raceway in Benson, NC
 
 alpha = (massTotal .* cornerVelocity.^2 ./ cornerRadius) ./ ca; %tire slip angle, degrees
@@ -67,32 +67,51 @@ totalLosses = [totalLosses, bearingLoss];
 totalLossesLabels{end+1} = 'Wheel bearing drag';
 %freewheel drag------------------------------------------
 
-%motor losses--------------------------------------------
-motorGearRatio = 120/14;
-motorRPM = wheelOmega * motorGearRatio * 60/(2*pi);
-motorCurrent = 5;
-motorVoltage = 16;
-motorWindingResistance = 0.186;
-motorControllerResistance = 0.016;
-motorNoLoadPower_0 = 5.76;
-motorNoLoadRPM_0 = 4200;
+% %motor losses--------------------------------------------
+% motorGearRatio = 120/14;
+% motorRPM = wheelOmega * motorGearRatio * 60/(2*pi);
+% motorCurrent = 5;
+% motorVoltage = 16;
+% motorWindingResistance = 0.186;
+% motorControllerResistance = 0.016;
+% motorNoLoadPower_0 = 5.76;
+% motorNoLoadRPM_0 = 4200;
+% motorDutyCycle = sum(totalLosses) / (motorCurrent * motorVoltage);
+% 
+% motorResistanceLoss = (motorWindingResistance + motorControllerResistance) * motorCurrent.^2 * motorDutyCycle;
+% motorNoLoadLoss = motorNoLoadPower_0 * motorRPM / motorNoLoadRPM_0 * motorDutyCycle;
+% 
+% totalLosses = [totalLosses, motorResistanceLoss + motorNoLoadLoss];
+% totalLossesLabels{end+1} = 'Motor losses';
+% 
+% motorEff = 1 - (motorResistanceLoss + motorNoLoadLoss) / sum(totalLosses);
+% %chain losses--------------------------------------------
+% 
+% chainPower_0 = 3.0;
+% chainRPM_0 = 2600;
+% 
+% chainLoss = chainPower_0 * motorRPM / chainRPM_0 * motorDutyCycle;
+% totalLosses = [totalLosses, chainLoss];
+% totalLossesLabels{end+1} = 'Chain losses';
+
+lossPoly_aeroAndBearing = [-1.06527e-08	-6.50352e-07	-1.02305e-04	1.12781e-03];
+lossPoly_eddy = [-1.11897e-08	-5.30369e-06	-6.07395e-03	3.03073e-02] - lossPoly_aeroAndBearing;
+lossPoly_aeroAndBearing(end) = 0;
+lossPoly_eddy(end) = 0;
+PlossMag_W = @(v) -polyval(lossPoly_eddy, v / (.475/2) * 60/(2*pi));
+PlossMech_W = @(v) -polyval(lossPoly_aeroAndBearing, v / (.475/2) * 60/(2*pi));
+
+totalLosses = [totalLosses, PlossMag_W(v), PlossMech_W(v)];
+totalLossesLabels{end+1} = 'Mitsuba magnetic';
+totalLossesLabels{end+1} = 'Mitsuba mechanical';
+
+motorCurrent = 3;
+motorVoltage = 12;
+motorWindingResistance = 0.14;
 motorDutyCycle = sum(totalLosses) / (motorCurrent * motorVoltage);
-
-motorResistanceLoss = (motorWindingResistance + motorControllerResistance) * motorCurrent.^2 * motorDutyCycle;
-motorNoLoadLoss = motorNoLoadPower_0 * motorRPM / motorNoLoadRPM_0 * motorDutyCycle;
-
-totalLosses = [totalLosses, motorResistanceLoss + motorNoLoadLoss];
-totalLossesLabels{end+1} = 'Motor losses';
-
-motorEff = 1 - (motorResistanceLoss + motorNoLoadLoss) / sum(totalLosses);
-%chain losses--------------------------------------------
-
-chainPower_0 = 3.0;
-chainRPM_0 = 2600;
-
-chainLoss = chainPower_0 * motorRPM / chainRPM_0 * motorDutyCycle;
-totalLosses = [totalLosses, chainLoss];
-totalLossesLabels{end+1} = 'Chain losses';
+motorResitivePower = motorCurrent^2 * motorWindingResistance;
+totalLosses = [totalLosses, motorResitivePower * motorDutyCycle];
+totalLossesLabels{end+1} = 'Mitsuba resistive';
 
 figure;
 
@@ -112,12 +131,12 @@ totalLosses = [totalLosses, fuelCellLoss];
 totalLossesLabels{end+1} = 'Fuel cell losses';
 
 %plotting and scorekeeping------------------------------
-figure;
-H = pie(totalLosses);
-T = H(strcmpi(get(H,'Type'),'text'));
-P = cell2mat(get(T,'Position'));
-set(T,{'Position'},num2cell(P*0.6,2));
-text(P(:,1),P(:,2),totalLossesLabels(:));
+% figure;
+% H = pie(totalLosses);
+% T = H(strcmpi(get(H,'Type'),'text'));
+% P = cell2mat(get(T,'Position'));
+% set(T,{'Position'},num2cell(P*0.6,2));
+% text(P(:,1),P(:,2),totalLossesLabels(:));
 
 
 totalPower = sum(totalLosses);
