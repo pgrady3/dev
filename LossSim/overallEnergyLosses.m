@@ -1,4 +1,10 @@
-clear; close all; %clc; 
+close all; clc;
+clearvars -except electricScoreEnglish
+
+oldScore = 1;
+if exist('electricScoreEnglish', 'var')
+    oldScore = electricScoreEnglish;
+end
 
 %all loss terms are in watts
 
@@ -6,8 +12,10 @@ v = 6.706; %nominal race speed in m/s
 massCar = 21; %mass of car in kg
 massDriver = 50; %mass of driver in kg
 g = 9.807; %acceleration of gravity
-kc = 4.9e-3; %constant wheel drag term
-kq = 9e-6; %quadratic wheel drag term
+kc = 5.38e-3; %constant wheel drag term
+kq = 1.64e-5; %quadratic wheel drag term
+kc = 1e-3; %constant wheel drag term
+kq = 0.9e-5; %quadratic wheel drag term
 d_wheel = 0.475; %diameter of the wheel in m
 
 massTotal = massCar + massDriver;
@@ -40,7 +48,7 @@ totalLosses = [totalLosses, rrPower];
 totalLossesLabels{end+1} = 'Tire rolling resistance';
 
 %cornering losses----------------------------------------
-ca = 100; %tire cornering stiffness, newtons per degree
+ca = 120; %tire cornering stiffness, newtons per degree
 cornerRadius = [30 30 30 30]; %turn radius in meters. assuming each corner turns 90 degrees
 cornerVelocity = [v v v v]; %speed taken through each corner
 trackLength = 1947.1; %track length in meters. Galot raceway in Benson, NC
@@ -100,18 +108,24 @@ lossPoly_aeroAndBearing(end) = 0;
 lossPoly_eddy(end) = 0;
 PlossMag_W = @(v) -polyval(lossPoly_eddy, v / (.475/2) * 60/(2*pi));
 PlossMech_W = @(v) -polyval(lossPoly_aeroAndBearing, v / (.475/2) * 60/(2*pi));
+motorMagneticPower = PlossMag_W(v);
 
-totalLosses = [totalLosses, PlossMag_W(v), PlossMech_W(v)];
+totalLosses = [totalLosses, motorMagneticPower];
 totalLossesLabels{end+1} = 'Mitsuba magnetic';
-totalLossesLabels{end+1} = 'Mitsuba mechanical';
+%totalLosses = [totalLosses, PlossMech_W(v)];
+%totalLossesLabels{end+1} = 'Mitsuba mechanical';
 
-motorCurrent = 3;
-motorVoltage = 12;
+motorCurrent = 2.47;
+%motorVoltage = 12;
 motorWindingResistance = 0.14;
-motorDutyCycle = sum(totalLosses) / (motorCurrent * motorVoltage);
-motorResitivePower = motorCurrent^2 * motorWindingResistance;
-totalLosses = [totalLosses, motorResitivePower * motorDutyCycle];
+%motorDutyCycle = sum(totalLosses) / (motorCurrent * motorVoltage);
+motorResistivePower = motorCurrent^2 * motorWindingResistance;
+totalLosses = [totalLosses, motorResistivePower];
 totalLossesLabels{end+1} = 'Mitsuba resistive';
+
+
+electricalPower = sum(totalLosses);
+motorEff = (electricalPower - motorResistivePower - motorMagneticPower) / electricalPower;
 
 figure;
 
@@ -124,7 +138,6 @@ text(P(:,1),P(:,2),totalLossesLabels(:));
 
 %fuel cell-----------------------------------------------
 h2Eff = 0.584;
-electricalPower = sum(totalLosses);
 fuelCellLoss = electricalPower / h2Eff - electricalPower;
 
 totalLosses = [totalLosses, fuelCellLoss];
@@ -149,3 +162,4 @@ scoreEnglish = scoreMetric ./ 1.609 .* 3.78541; % miles per gallon
 %note, actual world record hydrogen score was 14,573 MPG, 6196 km/L
 
 fprintf('Predicted electric score: %.1f mi/kWh, Hydrogen score: %.1f km/L\n', electricScoreEnglish, scoreMetric);
+fprintf('Relative difference to last run %.3f \n', electricScoreEnglish / oldScore);
