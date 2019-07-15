@@ -13,8 +13,8 @@ massCar = 21; %mass of car in kg
 massDriver = 50; %mass of driver in kg
 g = 9.807; %acceleration of gravity
 kc = 5.38e-3; %constant wheel drag term
-kq = 1.64e-5; %quadratic wheel drag term
-kc = 1e-3; %constant wheel drag term
+%kq = 1.64e-5; %quadratic wheel drag term
+%kc = 1e-3; %constant wheel drag term
 kq = 0.9e-5; %quadratic wheel drag term
 d_wheel = 0.475; %diameter of the wheel in m
 
@@ -111,7 +111,7 @@ PlossMech_W = @(v) -polyval(lossPoly_aeroAndBearing, v / (.475/2) * 60/(2*pi));
 motorMagneticPower = PlossMag_W(v);
 
 totalLosses = [totalLosses, motorMagneticPower];
-totalLossesLabels{end+1} = 'Mitsuba magnetic';
+totalLossesLabels{end+1} = 'Motor magnetic';
 %totalLosses = [totalLosses, PlossMech_W(v)];
 %totalLossesLabels{end+1} = 'Mitsuba mechanical';
 
@@ -121,7 +121,7 @@ motorWindingResistance = 0.14;
 %motorDutyCycle = sum(totalLosses) / (motorCurrent * motorVoltage);
 motorResistivePower = motorCurrent^2 * motorWindingResistance;
 totalLosses = [totalLosses, motorResistivePower];
-totalLossesLabels{end+1} = 'Mitsuba resistive';
+totalLossesLabels{end+1} = 'Motor resistive';
 
 
 electricalPower = sum(totalLosses);
