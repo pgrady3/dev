@@ -2,7 +2,7 @@
 % analyzedata.m
 % analyze fuel cell testing data
 
-clear; 
+clear; close all;clc;
 %% import data
 
 data = importdata('load_shorting.txt');
@@ -71,7 +71,7 @@ ylabel('Efficiency (%)')
 title('Fuel cell efficiency vs. power for various short frequencies');
 % legend('10ms','15ms','20ms','Location','SouthEast')
 
-print -dpng /Users/shomikverma/Documents1/Duke/EV/publication_plots/p_eff_shorting_freq
+%print -dpng /Users/shomikverma/Documents1/Duke/EV/publication_plots/p_eff_shorting_freq
 
 figure(3); clf;
 plot(voltage, power,'.');
@@ -80,7 +80,7 @@ ylabel('Power (W)')
 
 figure(4);
 placehold = zeros(size(current,1),1);
-scatter3(current, voltage,time, 5, time); hold on
+%scatter3(current, voltage,time, 5, time); hold on
 % scatter3(baseI, baseV, baseT, 5, baseT);
 plot3(baseI, baseV, baseT,'k.')
 % scatter3(current, fit_V(current), placehold, 5, placehold)
@@ -95,7 +95,7 @@ grad = gradient(current);
 short_help = sum(grad(grad>0.05))/sum(grad>0.05);
 % fprintf('short help: %f\n',short_help);
 
-print -dpng /Users/shomikverma/Documents1/Duke/EV/publication_plots/fast_discharge
+%print -dpng /Users/shomikverma/Documents1/Duke/EV/publication_plots/fast_discharge
 
 figure(5); clf;
 plot(time, temp)
